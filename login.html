@@ -92,11 +92,11 @@
         <form id="loginForm">
             <div>
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email">
+                <input type="email" id="email" name="email" value="momos@gmail.com"> {/* Added value for testing if you want */}
             </div>
             <div>
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password">
+                <input type="password" id="password" name="password" value="123456"> {/* Added value for testing if you want */}
             </div>
             <button type="submit">LOGIN</button>
         </form>
@@ -121,7 +121,9 @@
             }
 
             try {
-                const response = await fetch('http://localhost:3001/api/auth/login', {
+                // #################### IMPORTANT CHANGE HERE ####################
+                const response = await fetch('https://backend-brown-chi-24.vercel.app/api/auth/login', {
+                // ###############################################################
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -132,57 +134,41 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    messageContainer.textContent = data.message;
+                    messageContainer.textContent = data.message || "Login successful!"; // Ensure data.message exists
                     messageContainer.style.color = "#34d399"; // Green for success
                     
                     document.getElementById('loginForm').reset();
                     
-                    // Clear potentially conflicting old non-namespaced tokens first
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('loggedInUser');
-                    // The main 'isAdmin' will be set fresh, but let's clear any old one
-                    localStorage.removeItem('isAdmin');
-
+                    localStorage.removeItem('authToken'); // Generic, likely unused
+                    localStorage.removeItem('loggedInUser'); // Generic, likely unused
+                    localStorage.removeItem('isAdmin'); // Clear old isAdmin state
 
                     if (data.user && data.user.isAdmin) {
-                        // Admin user is logging in
                         console.log('Login: Admin login detected.');
-                        // Clear previous admin-specific tokens
-                        localStorage.removeItem('adminAuthToken');
-                        localStorage.removeItem('adminLoggedInUser');
-                        // Ensure no user session artifacts conflict with this admin session
                         localStorage.removeItem('userAuthToken'); 
                         localStorage.removeItem('userLoggedInUser');
-
                         localStorage.setItem('adminAuthToken', data.token);
                         localStorage.setItem('adminLoggedInUser', data.user.username);
-                        localStorage.setItem('isAdmin', 'true'); // Explicitly for this session
+                        localStorage.setItem('isAdmin', 'true'); 
                         console.log('Login: Admin tokens set. isAdmin=true. Redirecting to admin.html');
                         window.location.href = 'admin.html';
                     } else if (data.user) {
-                        // Regular user is logging in
                         console.log('Login: Regular user login detected.');
-                        // Clear previous user-specific tokens
-                        localStorage.removeItem('userAuthToken');
-                        localStorage.removeItem('userLoggedInUser');
-                        // Ensure no admin session artifacts conflict with this user session
                         localStorage.removeItem('adminAuthToken');
                         localStorage.removeItem('adminLoggedInUser');
-
                         localStorage.setItem('userAuthToken', data.token);
                         localStorage.setItem('userLoggedInUser', data.user.username);
-                        localStorage.setItem('isAdmin', 'false'); // Explicitly for this session
+                        localStorage.setItem('isAdmin', 'false'); 
                         console.log('Login: User tokens set. isAdmin=false. Redirecting to dashboard.html');
                         window.location.href = 'dashboard.html';
                     } else {
-                        // Fallback if data.user is not as expected
-                        console.error('Login: User data not found or invalid in response from /api/auth/login');
-                        messageContainer.textContent = "Error: User data not found in response.";
+                        console.error('Login: User data not found or invalid in response from /api/auth/login. Response data:', data);
+                        messageContainer.textContent = (data.message || "Error: User data not found in response.");
                         messageContainer.style.color = "#f87171";
                     }
 
                 } else {
-                    messageContainer.textContent = "Error: " + (data.message || response.statusText);
+                    messageContainer.textContent = "Error: " + (data.message || response.statusText || "Unknown login error");
                     messageContainer.style.color = "#f87171"; // Red for error
                 }
 
@@ -194,4 +180,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
