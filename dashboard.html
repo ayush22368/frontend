@@ -1,0 +1,3185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Mock Trading Platform</title>
+    <!-- Added QR Code library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <!-- Removed LightweightCharts library -->
+    <style>
+        /* Added from helpdashboard.html */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+        :root {
+            --primary-bg: #131722;
+            --secondary-bg: #1e222d; /* For headers, footers */
+            --sidebar-bg: #181c27;   /* For sidebars */
+            --chart-bg: #161a25; /* Slightly different dark for chart itself, similar to Exness */
+            --input-bg: #2a2e39;
+            --text-primary: #d1d4dc;
+            --text-secondary: #8c92a0; /* For less prominent text */
+            --accent-color: #f0b90b; 
+            --accent-secondary: #2962FF; /* Blue for Buy buttons / Highlights */
+            --danger-color: #FF1744; /* Red for Sell buttons / Warnings */
+            --border-color: #2a2e39; 
+            --border-highlight: #3e434f; 
+
+            /* Exness-like candle colors */
+            --candle-bull-color: #2962FF; /* Blue for bullish/up */
+            --candle-bear-color: #FF1744; /* Red for bearish/down */
+            --candle-wick-color: #787b86;  /* Wick color */
+            
+            --grid-line-color: #2a2e39; /* Subtle grid lines */
+            --axis-text-color: var(--text-secondary);
+            --current-price-line-color: #f0b90b; /* Gold for current price line */
+            --current-price-label-bg: var(--current-price-line-color);
+            --current-price-label-text: var(--primary-bg);
+
+            /* New colors based on image */
+            --green-positive: #00c853; /* Green for positive P/L, signals */
+            --red-negative: var(--danger-color); /* Consistent red */
+            --blue-neutral: #2979FF; /* For some UI elements if needed */
+            --button-text-dark: #131722; /* For text on light/accent buttons */
+        }
+        /* End Added from helpdashboard.html */
+
+        /* Basic Reset & Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #131722; /* Exness-like dark background */
+            color: #D1D4DC; /* Light grey text */
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Prevent scrollbars from main layout */
+        }
+
+        /* Main container for the three-column layout */
+        .main-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Left Sidebar (Instruments) */
+        .left-sidebar {
+            width: 280px;
+            background-color: #1C212D; /* Slightly lighter dark shade */
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2A2E39;
+        }
+        .left-sidebar .search-box {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px; /* Reduced margin */
+            background-color: #2A2E39;
+            border: 1px solid #3A3E4A;
+            border-radius: 4px;
+            color: #D1D4DC;
+        }
+        .left-sidebar h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #E0E0E0;
+        }
+        /* Old instrument list styles - will be replaced or adapted */
+        .instrument-list, .favorites-list {
+            list-style: none;
+            overflow-y: auto; /* Scroll for long lists */
+            flex-grow: 1;
+        }
+        .instrument-list li, .favorites-list li {
+            padding: 8px 5px;
+            margin-bottom: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+        .instrument-list li:hover, .favorites-list li:hover {
+            background-color: #2A2E39;
+        }
+        .instrument-list li .symbol-name, .favorites-list li .symbol-name {}
+        .instrument-list li .prices .bid, .favorites-list li .prices .bid {
+            color: #FF5B5A; /* Red for bid */
+        }
+        .instrument-list li .prices .ask, .favorites-list li .prices .ask {
+            color: #00B15D; /* Green for ask */
+            margin-left: 8px;
+        }
+
+        /* NEW Instrument List Header */
+        .instrument-list-header {
+            display: flex;
+            align-items: center;
+            padding: 6px 3px;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #848E9C; /* Lighter grey for header text */
+            border-bottom: 1px solid #2A2E39;
+        }
+        .instrument-list-header .header-symbol {
+            flex: 0 0 150px; /* Increased significantly for Symbol column */
+            padding-left: 5px; 
+        }
+        .instrument-list-header .header-signal {
+            flex: 0 0 40px; /* Slightly wider for header "Signal" */
+            text-align: center;
+        }
+        .instrument-list-header .header-bid {
+            flex: 1 1 65px; /* Allow shrinking, base 65px */
+            text-align: right;
+        }
+        .instrument-list-header .header-ask {
+            flex: 1 1 65px; /* Allow shrinking, base 65px */
+            text-align: right;
+            padding-right: 5px;
+        }
+
+        /* NEW Combined Instrument List Styles */
+        .combined-instrument-list {
+            list-style: none;
+            overflow-y: auto;
+            overflow-x: auto; /* ADDED for horizontal scroll if content wider than container */
+            flex-grow: 1;
+            font-size: 13px;
+        }
+        .combined-instrument-list li, .instrument-list-header { 
+            display: flex;
+            align-items: center;
+            padding: 6px 3px;
+            margin-bottom: 1px; 
+            border-radius: 3px;
+            /* cursor: pointer; */ /* Cursor only for li, not header */
+            min-width: 320px; /* Increased to ensure sum of ideal column widths */
+        }
+        .combined-instrument-list li {
+             cursor: pointer; /* Apply cursor only to list items */
+        }
+        .combined-instrument-list .drag-handle {
+            margin-right: 5px;
+            color: #505867; /* Dim color for drag handle */
+            cursor: grab;
+        }
+        .combined-instrument-list .symbol-icon {
+            width: 18px; /* Space for icon */
+            height: 18px;
+            margin-right: 5px; /* Reduced from 8px */
+            display: flex; /* Use flex to center icon if it's text */
+            align-items: center;
+            justify-content: center;
+        }
+        .combined-instrument-list .symbol-name {
+            flex: 1 0 100px; /* Grow from 100px, don't shrink below content if possible initially*/
+            white-space: nowrap;
+            overflow: hidden; /* Restore for clean truncation */
+            text-overflow: ellipsis; /* Restore for clean truncation */
+            margin-left: 3px; /* Space after icon */
+            margin-right: 5px; 
+        }
+        .combined-instrument-list .symbol-extra-icon {
+            width: 16px;
+            height: 16px;
+            margin-left: 0px; /* Reduced from 3px */
+            margin-right: 3px; 
+            display: flex; /* Use flex to center icon if it's text */
+            align-items: center;
+            justify-content: center;
+        }
+        .combined-instrument-list .direction-arrow {
+            flex: 0 0 20px; 
+            height: 20px;
+            margin: 0 5px; /* Centered margin for signal column alignment */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            color: white;
+            font-weight: bold;
+        }
+        .combined-instrument-list .direction-arrow.up {
+            background-color: #00B15D; /* Green */
+        }
+        .combined-instrument-list .direction-arrow.down {
+            background-color: #FF5B5A; /* Red */
+        }
+        .combined-instrument-list .direction-arrow.neutral {
+            background-color: #4a5568; /* Grey */
+        }
+        .combined-instrument-list .price-box {
+            flex: 0 0 60px; /* Slightly reduced fixed width for price boxes */
+            padding: 4px 3px; 
+            margin-left: 2px; 
+            border-radius: 2px;
+            text-align: right;
+            color: white;
+        }
+        .combined-instrument-list .bid-box {
+            background-color: #FF5B5A; /* Red background */
+        }
+        .combined-instrument-list .ask-box {
+            background-color: #00B15D; /* Green background */
+        }
+
+        /* Center Content (Chart & Bottom Panel) */
+        .center-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #131722;
+            overflow: hidden; /* Prevent center content itself from causing page scroll */
+        }
+
+        /* Restored chart placeholder styles */
+        .chart-area {
+            flex-grow: 1;
+            background-color: #131722; /* Main chart background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            border-bottom: 1px solid #2A2E39;
+            position: relative;
+        }
+        
+        .chart-placeholder {
+            color: #2A2E39;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        /* Removed tv-chart-container styles */
+
+        .chart-top-bar {
+            display: flex;
+            padding: 10px;
+            background-color: #1C212D;
+            border-bottom: 1px solid #2A2E39;
+            align-items: center;
+        }
+        .chart-top-bar .currency-pair-tabs button {
+            background: none;
+            border: none;
+            color: #D1D4DC;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .chart-top-bar .currency-pair-tabs button.active {
+            color: #F0B90B; /* Highlight for active tab */
+            border-bottom: 2px solid #F0B90B;
+        }
+        .chart-controls {
+            margin-left: auto; /* Pushes to the right */
+        }
+        .chart-controls button {
+             background-color: #2A2E39;
+             border: 1px solid #3A3E4A;
+             color: #D1D4DC;
+             padding: 6px 10px;
+             margin-left: 5px;
+             border-radius: 3px;
+             cursor: pointer;
+        }
+
+        /* Removed price display styles */
+
+        .bottom-panel {
+            height: 200px; /* Fixed height, adjust as needed */
+            background-color: #1C212D;
+            display: flex;
+            flex-direction: column;
+            /* Removed border-top here as chart-area has border-bottom */
+        }
+        .bottom-panel-tabs {
+            display: flex;
+            padding: 0 10px;
+            border-bottom: 1px solid #2A2E39;
+        }
+        .bottom-panel-tabs button {
+            background: none;
+            border: none;
+            color: #D1D4DC;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .bottom-panel-tabs button.active {
+            color: #F0B90B;
+            border-bottom: 2px solid #F0B90B; 
+        }
+        .positions-table-container {
+            flex-grow: 1;
+            overflow: auto; /* Scroll for table content */
+            padding: 10px;
+        }
+        .positions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .positions-table th, .positions-table td {
+            border: 1px solid #2A2E39;
+            padding: 8px;
+            text-align: left;
+        }
+        .positions-table th {
+            background-color: #2A2E39;
+        }
+
+        /* Right Sidebar (Order Panel) */
+        .right-sidebar {
+            width: 300px;
+            background-color: #1C212D;
+            padding: 15px;
+            border-left: 1px solid #2A2E39;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-sidebar .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .right-sidebar .header h2 {
+            font-size: 18px;
+            color: #E0E0E0;
+        }
+        .right-sidebar .order-type-tabs {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .right-sidebar .order-type-tabs button {
+            flex-grow: 1;
+            padding: 10px;
+            background-color: #2A2E39;
+            border: 1px solid #3A3E4A;
+            color: #D1D4DC;
+            cursor: pointer;
+        }
+        .right-sidebar .order-type-tabs button.active {
+            background-color: #3A3E4A;
+            color: #F0B90B;
+        }
+        .right-sidebar .form-group {
+            margin-bottom: 12px;
+        }
+        .right-sidebar .form-group label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .right-sidebar .form-group input {
+            width: 100%;
+            padding: 8px;
+            background-color: #2A2E39;
+            border: 1px solid #3A3E4A;
+            border-radius: 4px;
+            color: #D1D4DC;
+        }
+        .right-sidebar .buy-sell-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .right-sidebar .buy-sell-buttons button {
+            width: 48%;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .right-sidebar .buy-button {
+            background-color: #00B15D; /* Green */
+            color: white;
+        }
+        .right-sidebar .sell-button {
+            background-color: #FF5B5A; /* Red */
+            color: white;
+        }
+
+        /* Footer (Account Info) */
+        .footer-bar {
+            background-color: #1C212D;
+            padding: 8px 15px;
+            border-top: 1px solid #2A2E39;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-around;
+            /* position: fixed; */ /* REMOVED fixed positioning */
+            /* bottom: 0; */
+            /* width: calc(100% - 280px - 300px); */ /* Width will be handled by flex container */
+            /* left: 280px; */
+            width: 100%; /* It's a direct child of center-content now */
+        }
+
+        .footer-item {
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .footer-item .value {
+            font-weight: bold;
+            color: #E0E0E0;
+        }
+        
+        .balance-item {
+            background-color: rgba(41, 98, 255, 0.1);
+            border-left: 3px solid #2962FF;
+        }
+
+        /* Header for User Info and Logout - from previous setup */
+        .page-header {
+            /* This was the old header, we might integrate parts into new top bars */
+            /* For now, keeping it simple or removing if Exness screenshot doesn't have a similar top global bar */
+            display: none; /* Hidden for now, as Exness has a different top bar structure */
+        }
+        
+        /* Top header bar styles - like Exness */
+        .top-header-bar {
+            display: none; /* Hiding the top header as requested */
+        }
+        
+        /* Deposit Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #171B26;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 4px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: #E0E0E0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .modal-close {
+            color: #8c92a0;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #D1D4DC;
+        }
+
+        .deposit-form .form-group {
+            margin-bottom: 15px;
+        }
+
+        .deposit-form label {
+            display: block;
+            margin-bottom: 8px;
+            color: #A0A0A0;
+            font-size: 14px;
+        }
+
+        .deposit-form input[type="number"],
+        .deposit-form select {
+            width: 100%;
+            padding: 10px 12px;
+            background-color: #212630;
+            border: 1px solid #2A2E39;
+            border-radius: 4px;
+            color: #D1D4DC;
+            font-size: 14px;
+        }
+
+        .select-crypto {
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23A0A0A0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        .qr-code-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        #qrCode {
+            width: 150px;
+            height: 150px;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            color: #D1D4DC;
+            padding: 12px;
+            background-color: #212630;
+            border-radius: 4px;
+            margin: 15px 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        .copy-btn {
+            background-color: #2C3142;
+            border: none;
+            color: #D1D4DC;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+
+        .copy-btn:hover {
+            background-color: #3A3E4A;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+
+        .cancel-btn {
+            background-color: #2A2E39;
+            color: #A0A0A0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 48%;
+        }
+
+        .request-deposit-btn {
+            background-color: #2962FF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 48%;
+        }
+
+        .request-deposit-btn:hover {
+            background-color: #1E54E0;
+        }
+
+        /* Deposit Notification Styles */
+        .deposit-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #1C212D;
+            border-left: 4px solid #00B15D;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+            z-index: 2000;
+            padding: 15px;
+            width: 300px;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+        }
+
+        .notification-icon {
+            background-color: #00B15D;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+
+        .notification-message {
+            flex: 1;
+        }
+
+        .notification-title {
+            color: #E0E0E0;
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .notification-details {
+            display: flex;
+            flex-direction: column;
+            color: #A0A0A0;
+            font-size: 12px;
+        }
+
+        .notification-details span {
+            margin-bottom: 3px;
+        }
+        
+        /* Trading Components Styles */
+        .close-position-btn, .cancel-pending-btn {
+            background-color: #2A2E39;
+            color: #D1D4DC;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .close-position-btn:hover, .cancel-pending-btn:hover {
+            background-color: #3A3E4A;
+        }
+        
+        .pending-order-form {
+            margin-top: 10px;
+        }
+        
+        .pending-order-form .select-pending-type {
+            width: 100%;
+            padding: 8px;
+            background-color: #2A2E39;
+            border: 1px solid #3A3E4A;
+            border-radius: 4px;
+            color: #D1D4DC;
+            margin-bottom: 10px;
+        }
+        
+        .place-pending-order {
+            width: 100%;
+            padding: 12px;
+            background-color: #2962FF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .place-pending-order:hover {
+            background-color: #1E54E0;
+        }
+        
+        /* Style for positions table */
+        .positions-table td {
+            font-size: 13px;
+            vertical-align: middle;
+        }
+        
+        /* Top balance display */
+        .top-balance-display {
+            position: absolute;
+            right: 150px;
+            top: 10px;
+            display: flex;
+            align-items: center;
+            background-color: rgba(41, 98, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border-left: 3px solid #2962FF;
+            font-size: 14px;
+            z-index: 10;
+        }
+        
+        .top-balance-label {
+            color: #8c92a0;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+        
+        .top-balance-value {
+            color: #E0E0E0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top header bar like Exness - hidden as requested -->
+    <!-- Main Layout Container -->
+    <div class="main-container">
+
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                 <h2 style="font-size:18px; color:#E0E0E0;">Trading Terminal</h2> <!-- Example Title -->
+                 <button id="logoutButton" style="background: #3A3E4A; color: #D1D4DC; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer;">Logout</button>
+            </div>
+            <input type="text" class="search-box" placeholder="Search (e.g. EURUSD)">
+
+            <!-- NEW Instrument List Header -->
+            <div class="instrument-list-header">
+                <span class="header-symbol">Symbol</span>
+                <span class="header-signal">Signal</span>
+                <span class="header-bid">Bid</span>
+                <span class="header-ask">Ask</span>
+            </div>
+
+            <!-- NEW Combined Instrument List -->
+            <ul class="combined-instrument-list">
+                <li data-symbol="BINANCE:BTCUSDT">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon">₿</span>
+                    <span class="symbol-name">BTC</span>
+                    <span class="symbol-extra-icon"></span>
+                    <span class="direction-arrow up">↑</span>
+                    <span class="price-box bid-box">103916.24</span>
+                    <span class="price-box ask-box">103950.70</span>
+                </li>
+                <li data-symbol="OANDA:XAUUSD">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon">⚜️</span> <!-- Placeholder for XAU -->
+                    <span class="symbol-name">XAU/USD</span>
+                    <span class="symbol-extra-icon"></span>
+                    <span class="direction-arrow down">↓</span>
+                    <span class="price-box bid-box">3225.079</span>
+                    <span class="price-box ask-box">3225.900</span>
+                </li>
+                <li data-symbol="NASDAQ:AAPL">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon"></span>
+                    <span class="symbol-name">AAPL</span>
+                    <span class="symbol-extra-icon">🚫</span>
+                    <span class="direction-arrow up">↑</span>
+                    <span class="price-box bid-box">210.43</span>
+                    <span class="price-box ask-box">210.50</span>
+                </li>
+                 <li data-symbol="OANDA:EURUSD">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon">🇪🇺</span> <!-- EU Flag -->
+                    <span class="symbol-name">EUR/USD</span>
+                    <span class="symbol-extra-icon"></span>
+                    <span class="direction-arrow up">↑</span>
+                    <span class="price-box bid-box">1.12105</span>
+                    <span class="price-box ask-box">1.12115</span>
+                </li>
+                <li data-symbol="OANDA:GBPUSD">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon">🇬🇧</span> <!-- UK Flag -->
+                    <span class="symbol-name">GBP/USD</span>
+                    <span class="symbol-extra-icon"></span>
+                    <span class="direction-arrow up">↑</span>
+                    <span class="price-box bid-box">1.33203</span>
+                    <span class="price-box ask-box">1.33213</span>
+                </li>
+                 <li data-symbol="OANDA:USDJPY">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon">🇯🇵</span> <!-- JP Flag for USD/JPY -->
+                    <span class="symbol-name">USD/JPY</span>
+                    <span class="symbol-extra-icon"></span>
+                    <span class="direction-arrow down">↓</span>
+                    <span class="price-box bid-box">145.284</span>
+                    <span class="price-box ask-box">145.294</span>
+                </li>
+                <li data-symbol="NASDAQ:NDX">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon">⚙️</span> <!-- Generic for USTEC -->
+                    <span class="symbol-name">USTEC</span>
+                    <span class="symbol-extra-icon"></span>
+                    <span class="direction-arrow neutral">-</span>
+                    <span class="price-box bid-box">21321.62</span>
+                    <span class="price-box ask-box">21325.00</span>
+                </li>
+                 <li data-symbol="TVC:USOIL">
+                    <span class="drag-handle">&#x22EE;</span>
+                    <span class="symbol-icon">🛢️</span> <!-- Oil barrel -->
+                    <span class="symbol-name">USOIL</span>
+                    <span class="symbol-extra-icon"></span>
+                    <span class="direction-arrow up">↑</span>
+                    <span class="price-box bid-box">61.004</span>
+                    <span class="price-box ask-box">61.054</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Center Content Area (Chart + Bottom Panel) -->
+        <div class="center-content">
+            <div class="chart-top-bar">
+                <div class="currency-pair-tabs">
+                    <button class="active">XAUUSD</button>
+                    <button>EUR/USD</button>
+                    <button>BTC</button>
+                    <button>AAPL</button>
+                    <button>GBP/USD</button>
+                    <button>USD/JPY</button>
+                    <button>USTEC</button>
+                    <button>USOIL</button>
+                </div>
+                <div class="chart-controls">
+                    <button>1m</button>
+                    <button>5m</button>
+                    <button>1H</button>
+                    <button>Indicators</button>
+                    <!-- Add more controls -->
+                </div>
+                <div class="top-header-balance" style="margin-left: 15px; display: flex; align-items: center; background-color: rgba(41, 98, 255, 0.1); padding: 5px 10px; border-radius: 4px; border-left: 3px solid #2962FF;">
+                    <span style="color: #8c92a0; margin-right: 8px; font-weight: 500;">Balance:</span>
+                    <span id="topHeaderBalance" style="color: #E0E0E0; font-weight: bold;">0.00 USD</span>
+                </div>
+            </div>
+            <!-- Replace chart placeholder with TradingView widget -->
+            <div class="chart-area">
+                <!-- TradingView Widget BEGIN -->
+                <div class="tradingview-widget-container" style="width: 100%; height: 100%;">
+                  <div id="tradingview_chart" style="width: 100%; height: 100%;"></div>
+                  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                  <script type="text/javascript">
+                  // Direct approach - recreate the widget completely when changing symbols
+                  function createTradingViewWidget(symbol) {
+                    // Clear existing widget
+                    const container = document.getElementById('tradingview_chart');
+                    container.innerHTML = '';
+                    
+                    // Add balance display to top header
+                    const topHeaderBalance = document.getElementById('topHeaderBalance');
+                    if (topHeaderBalance) {
+                      const balanceVal = document.getElementById('balanceVal');
+                      if (balanceVal) {
+                        topHeaderBalance.textContent = balanceVal.textContent;
+                      }
+                    }
+                    
+                    // Create completely new widget with selected symbol
+                    let tvWidget = new TradingView.widget({
+                      "width": "100%",
+                      "height": "100%",
+                      "symbol": symbol,
+                      "interval": "5",
+                      "timezone": "Etc/UTC",
+                      "theme": "dark",
+                      "style": "1",
+                      "locale": "en",
+                      "toolbar_bg": "#1C212D",
+                      "enable_publishing": false,
+                      "hide_side_toolbar": false,
+                      "allow_symbol_change": true,
+                      "container_id": "tradingview_chart",
+                      "studies": [
+                        "MASimple@tv-basicstudies"
+                      ],
+                      "overrides": {
+                        "paneProperties.background": "#131722",
+                        "paneProperties.vertGridProperties.color": "#242834",
+                        "paneProperties.horzGridProperties.color": "#242834",
+                        "symbolWatermarkProperties.transparency": 90,
+                        "mainSeriesProperties.candleStyle.upColor": "#2962FF",
+                        "mainSeriesProperties.candleStyle.downColor": "#FF1744",
+                        "mainSeriesProperties.candleStyle.wickUpColor": "#2962FF",
+                        "mainSeriesProperties.candleStyle.wickDownColor": "#FF1744"
+                      },
+                      "drawings_access": { 
+                        "type": "all",
+                        "tools": [ { "name": "Regression Trend" } ] 
+                      },
+                      "saved_data": {
+                        "drawings": [],
+                        "charts": []
+                      },
+                      "onChartReady": function() {
+                        console.log("Chart is ready");
+                        
+                        // Get the chart instance
+                        const chart = this.chart();
+                        
+                        // Store the chart instance globally
+                        window.tradingViewChart = chart;
+                        
+                        // Add some default horizontal support/resistance lines
+                        addSupportResistanceLines(chart);
+                      }
+                    });
+                    
+                    // Store the widget instance globally to access it later
+                    window.tvWidget = tvWidget;
+                    
+                    return tvWidget;
+                  }
+                  
+                  // Add support and resistance lines to chart
+                  function addSupportResistanceLines(chart) {
+                      // Get the current symbol info
+                      const symbolInfo = chart.symbolInfo();
+                      if (!symbolInfo) return;
+                      
+                      // Get current price
+                      const lastPrice = symbolInfo.last_price || symbolInfo.prevclose;
+                      if (!lastPrice) return;
+                      
+                      // Calculate levels (we'll create 3 lines above and 3 below current price)
+                      const levels = [];
+                      const step = lastPrice * 0.005; // 0.5% steps
+                      
+                      for (let i = -3; i <= 3; i++) {
+                          if (i === 0) continue; // Skip the current price level
+                          levels.push({
+                              price: lastPrice + (i * step),
+                              color: i > 0 ? '#F0B90B' : '#2962FF', // Yellow above, blue below
+                              width: 1,
+                              style: 1, // Solid line
+                              text: i > 0 ? 'Resistance' : 'Support',
+                              textColor: i > 0 ? '#F0B90B' : '#2962FF',
+                              showLabel: Math.abs(i) === 2 // Only show label on middle lines
+                          });
+                      }
+                      
+                      // Draw the lines
+                      levels.forEach(level => {
+                          const lineProperties = {
+                              "text": level.showLabel ? level.text : "",
+                              "textColor": level.textColor,
+                              "fontSize": 12,
+                              "bold": false,
+                              "linewidth": level.width,
+                              "linestyle": level.style,
+                              "linecolor": level.color,
+                              "showLabel": level.showLabel,
+                              "horzLabelsAlign": "right",
+                          };
+                          
+                          // Create the horizontal line
+                          chart.createShape({ 
+                              shape: "horizontal_line", 
+                              overrides: lineProperties,
+                              disableSelection: true, 
+                              disableSave: true, 
+                              disableUndo: true,
+                              zIndex: 5,
+                              lock: true
+                          }, [{
+                              price: level.price
+                          }]);
+                      });
+                  }
+                  
+                  // Function to add trade markers to the chart
+                  function addTradeMarker(position) {
+                      if (!window.tradingViewChart) return;
+                      
+                      const chart = window.tradingViewChart;
+                      
+                      // Get the current time
+                      const currentTime = Math.floor(Date.now() / 1000);
+                      
+                      // Trade marker shape properties
+                      const markerProperties = {
+                          "shape": position.type === "Buy" ? "arrow_up" : "arrow_down",
+                          "text": `${position.type} lot: ${position.volume.toFixed(2)}`,
+                          "textColor": "white",
+                          "fontSize": 12,
+                          "bold": true,
+                          "backgroundColor": position.type === "Buy" ? "#2962FF" : "#FF1744",
+                          "borderColor": "#F0B90B", // Yellow border
+                          "borderWidth": 1,
+                          "fontFamily": "Trebuchet MS",
+                          "fontStyle": "bold",
+                          "zIndex": 10
+                      };
+                      
+                      // Create the marker
+                      chart.createShape({
+                          shape: position.type === "Buy" ? "arrow_up" : "arrow_down", 
+                          overrides: markerProperties,
+                          disableSelection: false, 
+                          disableSave: true, 
+                          disableUndo: true,
+                          zIndex: 10
+                      }, [{
+                          time: currentTime,
+                          price: position.openPrice
+                      }]);
+                      
+                      // If stop loss is set, add a horizontal line
+                      if (position.stopLoss) {
+                          chart.createShape({
+                              shape: "horizontal_line", 
+                              overrides: {
+                                  "text": "Stop Loss",
+                                  "textColor": "#FF1744",
+                                  "fontSize": 12,
+                                  "bold": true,
+                                  "linewidth": 1,
+                                  "linestyle": 2, // Dashed line
+                                  "linecolor": "#FF1744",
+                                  "showLabel": true,
+                                  "horzLabelsAlign": "right",
+                              },
+                              disableSelection: true, 
+                              disableSave: true, 
+                              disableUndo: true,
+                              zIndex: 5
+                          }, [{
+                              price: parseFloat(position.stopLoss)
+                          }]);
+                      }
+                      
+                      // If take profit is set, add a horizontal line
+                      if (position.takeProfit) {
+                          chart.createShape({
+                              shape: "horizontal_line", 
+                              overrides: {
+                                  "text": "Take Profit",
+                                  "textColor": "#00B15D",
+                                  "fontSize": 12,
+                                  "bold": true,
+                                  "linewidth": 1,
+                                  "linestyle": 2, // Dashed line
+                                  "linecolor": "#00B15D",
+                                  "showLabel": true,
+                                  "horzLabelsAlign": "right",
+                              },
+                              disableSelection: true, 
+                              disableSave: true, 
+                              disableUndo: true,
+                              zIndex: 5
+                          }, [{
+                              price: parseFloat(position.takeProfit)
+                          }]);
+                      }
+                  }
+                  
+                  // Initialize with default symbol
+                  document.addEventListener('DOMContentLoaded', function() {
+                    // console.log('[DEBUG] TradingView Widget DOMContentLoaded: SKIPPING createTradingViewWidget CALL for testing.'); // remove this log
+                    createTradingViewWidget("OANDA:XAUUSD"); // Restore this call
+                  });
+                  
+                  // Initialize open positions array
+                  const openPositions = [];
+                  
+                  // Symbol change handler for tabs
+                  document.querySelectorAll('.currency-pair-tabs button').forEach(button => {
+                      button.addEventListener('click', function() {
+                          // Remove active class from all buttons
+                          document.querySelectorAll('.currency-pair-tabs button').forEach(btn => {
+                              btn.classList.remove('active');
+                          });
+                          
+                          // Add active class to clicked button
+                          this.classList.add('active');
+                          
+                          // Get symbol text
+                          let symbol = this.textContent.trim();
+                          
+                          // Map to TradingView symbols
+                          const symbolMap = {
+                              'XAUUSD': 'OANDA:XAUUSD',
+                              'EUR/USD': 'OANDA:EURUSD',
+                              'BTC': 'BINANCE:BTCUSDT',
+                              'AAPL': 'NASDAQ:AAPL',
+                              'GBP/USD': 'OANDA:GBPUSD',
+                              'USD/JPY': 'OANDA:USDJPY',
+                              'USTEC': 'NASDAQ:NDX',
+                              'USOIL': 'TVC:USOIL'
+                          };
+                          
+                          // Update TradingView widget symbol
+                          if (symbolMap[symbol]) {
+                              createTradingViewWidget(symbolMap[symbol]);
+                              
+                              // Also update order panel
+                              document.getElementById('orderPanelSymbol').textContent = symbolName.includes('/') ? 
+                                symbolName.replace('/', '') : symbolName;
+                            
+                              // Update active tab in currency pair tabs
+                              const tabButtons = document.querySelectorAll('.currency-pair-tabs button');
+                              tabButtons.forEach(button => {
+                                  if (button.textContent.trim() === symbolName || 
+                                      (symbolName === 'XAU/USD' && button.textContent.trim() === 'XAUUSD')) {
+                                      button.classList.add('active');
+                                  } else {
+                                      button.classList.remove('active');
+                                  }
+                              });
+                          }
+                      });
+                  });
+                  
+                  // Add timeframe button handlers
+                  document.querySelectorAll('.chart-controls button').forEach(button => {
+                      button.addEventListener('click', function() {
+                          const timeframeText = this.textContent.trim();
+                          
+                          // Get current selected symbol
+                          const orderPanelSymbol = document.getElementById('orderPanelSymbol').textContent;
+                          const symbolMap = {
+                              'BTC': 'BINANCE:BTCUSDT',
+                              'XAU/USD': 'OANDA:XAUUSD',
+                              'AAPL': 'NASDAQ:AAPL',
+                              'EUR/USD': 'OANDA:EURUSD',
+                              'GBP/USD': 'OANDA:GBPUSD',
+                              'USD/JPY': 'OANDA:USDJPY',
+                              'USTEC': 'NASDAQ:NDX',
+                              'USOIL': 'TVC:USOIL',
+                              'XAUUSD': 'OANDA:XAUUSD'
+                          };
+                          
+                          // Map button text to TradingView intervals
+                          let interval;
+                          switch(timeframeText) {
+                              case '1m':
+                                  interval = "1";
+                                  break;
+                              case '5m':
+                                  interval = "5";
+                                  break;
+                              case '1H':
+                                  interval = "60";
+                                  break;
+                              case 'Indicators':
+                                  // Can't handle indicators easily with full recreation approach
+                                  return;
+                              default:
+                                  return;
+                          }
+                          
+                          // If we got a valid interval, recreate chart with that interval
+                          if (interval) {
+                              // Get current symbol
+                              const currentSymbol = symbolMap[orderPanelSymbol] || 'OANDA:XAUUSD';
+                              
+                              // Clear existing widget
+                              const container = document.getElementById('tradingview_chart');
+                              container.innerHTML = '';
+                              
+                              // Create completely new widget with selected symbol and interval
+                              new TradingView.widget({
+                                  "width": "100%",
+                                  "height": "100%",
+                                  "symbol": currentSymbol,
+                                  "interval": interval,
+                                  "timezone": "Etc/UTC",
+                                  "theme": "dark",
+                                  "style": "1",
+                                  "locale": "en",
+                                  "toolbar_bg": "#1C212D",
+                                  "enable_publishing": false,
+                                  "hide_side_toolbar": false,
+                                  "allow_symbol_change": true,
+                                  "container_id": "tradingview_chart",
+                                  "studies": [
+                                    "MASimple@tv-basicstudies"
+                                  ],
+                                  "overrides": {
+                                    "paneProperties.background": "#131722",
+                                    "paneProperties.vertGridProperties.color": "#242834",
+                                    "paneProperties.horzGridProperties.color": "#242834",
+                                    "symbolWatermarkProperties.transparency": 90,
+                                    "mainSeriesProperties.candleStyle.upColor": "#2962FF",
+                                    "mainSeriesProperties.candleStyle.downColor": "#FF1744",
+                                    "mainSeriesProperties.candleStyle.wickUpColor": "#2962FF",
+                                    "mainSeriesProperties.candleStyle.wickDownColor": "#FF1744"
+                                  },
+                                  "drawings_access": { 
+                                    "type": "all",
+                                    "tools": [ { "name": "Regression Trend" } ] 
+                                  },
+                                  "saved_data": {
+                                    "drawings": [],
+                                    "charts": []
+                                  },
+                                  "onChartReady": function() {
+                                    console.log("Chart is ready");
+                                    
+                                    // Get the chart instance
+                                    const chart = this.chart();
+                                    
+                                    // Store the chart instance globally
+                                    window.tradingViewChart = chart;
+                                    
+                                    // Add some default horizontal support/resistance lines
+                                    addSupportResistanceLines(chart);
+                                  }
+                              });
+                              
+                              // Store widget and wait for it to be ready
+                              const newWidget = window.tvWidget;
+                              
+                              // Re-add drawing tools once the chart is loaded
+                              if (newWidget && typeof newWidget.onChartReady === 'function') {
+                                  newWidget.onChartReady(function() {
+                                      const chart = newWidget.chart();
+                                      window.tradingViewChart = chart;
+                                      
+                                      // Add support/resistance lines
+                                      addSupportResistanceLines(chart);
+                                      
+                                      // Re-add markers for open positions
+                                      openPositions.forEach(position => {
+                                          // Only add markers for the currently viewed symbol
+                                          if (position.symbol === orderPanelSymbol) {
+                                              addTradeMarker(position);
+                                          }
+                                      });
+                                  });
+                              }
+                          }
+
+                          // Update active button styles
+                          document.querySelectorAll('.chart-controls button').forEach(btn => {
+                              // Only update timeframe buttons, not "Indicators"
+                              if (btn.textContent.trim() !== 'Indicators') {
+                                  btn.style.backgroundColor = '#2A2E39';
+                                  btn.style.color = '#D1D4DC';
+                              }
+                          });
+                          
+                          if (timeframeText !== 'Indicators') {
+                              this.style.backgroundColor = '#3A3E4A';
+                              this.style.color = '#F0B90B';
+                          }
+                      });
+                  });
+                  </script>
+                </div>
+                <!-- TradingView Widget END -->
+            </div>
+            <div class="bottom-panel">
+                <div class="bottom-panel-tabs">
+                    <button class="active">OPEN</button>
+                    <button>PENDING</button>
+                    <button>CLOSED</button>
+                </div>
+                <div class="positions-table-container">
+                    <table class="positions-table">
+                        <thead>
+                            <tr><th>Symbol</th><th>Type</th><th>Volume</th><th>Open Price</th><th>Current Price</th><th>S/L</th><th>T/P</th><th>Profit</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            <!-- More rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="footer-bar">
+                <span class="footer-item">Equity: <span id="equityVal" class="value">0.00 USD</span></span>
+                <span class="footer-item">Free Margin: <span id="freeMarginVal" class="value">0.00 USD</span></span>
+                <span class="footer-item balance-item">Balance: <span id="balanceVal" class="value">0.00 USD</span></span>
+            </div>
+        </div>
+
+        <!-- Right Sidebar (Order Panel) -->
+        <div class="right-sidebar">
+            <div class="header">
+                <h2 id="orderPanelSymbol">XAUUSD</h2>
+                <div style="display: flex; align-items: center;">
+                    <div id="userInfoContainer" style="margin-right: 10px;">User: username</div>
+                    <button id="depositButton" style="background: #F0B90B; color: #131722; border: none; padding: 5px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; margin-right: 5px;">Deposit</button>
+                    <button id="withdrawButton" style="background: #2962FF; color: white; border: none; padding: 5px 7px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 12px; margin-right: 3px;">Withdraw</button>
+                </div>
+            </div>
+            <div class="order-type-tabs">
+                <button class="active">Market</button>
+                <button>Pending</button>
+            </div>
+            
+            <!-- Market Order Form -->
+            <div id="marketOrderForm">
+                <div class="form-group">
+                    <label for="volume">Volume</label>
+                    <input type="number" id="volume" name="volume" value="0.01" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="stopLossVal">Stop Loss</label>
+                    <input type="number" id="stopLossVal" name="stopLoss" placeholder="Not set">
+                </div>
+                <div class="form-group">
+                    <label for="takeProfitVal">Take Profit</label>
+                    <input type="number" id="takeProfitVal" name="takeProfit" placeholder="Not set">
+                </div>
+                <div class="buy-sell-buttons">
+                    <button class="sell-button">Sell</button>
+                    <button class="buy-button">Buy</button>
+                </div>
+            </div>
+            
+            <!-- Pending Order Form (hidden initially) -->
+            <div id="pendingOrderForm" style="display: none;">
+                <div class="form-group">
+                    <label for="pendingOrderType">Order Type</label>
+                    <select id="pendingOrderType" class="select-pending-type">
+                        <option value="limit">Limit Order</option>
+                        <option value="stop">Stop Order</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pendingPrice">Entry Price</label>
+                    <input type="number" id="pendingPrice" name="pendingPrice" placeholder="Enter price">
+                </div>
+                <div class="form-group">
+                    <label for="pendingVolume">Volume</label>
+                    <input type="number" id="pendingVolume" name="pendingVolume" value="0.01" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="pendingStopLoss">Stop Loss</label>
+                    <input type="number" id="pendingStopLoss" name="pendingStopLoss" placeholder="Not set">
+                </div>
+                <div class="form-group">
+                    <label for="pendingTakeProfit">Take Profit</label>
+                    <input type="number" id="pendingTakeProfit" name="pendingTakeProfit" placeholder="Not set">
+                </div>
+                <div class="pending-direction">
+                    <label style="display: block; margin-bottom: 10px;">Direction</label>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="pendingBuyBtn" style="flex: 1; background: #00B15D; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">Buy</button>
+                        <button id="pendingSellBtn" style="flex: 1; background: #FF5B5A; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">Sell</button>
+                    </div>
+                </div>
+                <button class="place-pending-order">Place Pending Order</button>
+            </div>
+        </div>
+
+    </div> <!-- End Main Container -->
+
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Deposit</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="deposit-form">
+                <div class="form-group">
+                    <label for="cryptoCurrency">Select Currency:</label>
+                    <select id="cryptoCurrency" class="select-crypto">
+                        <option value="btc">Bitcoin (BTC)</option>
+                        <option value="eth">Ethereum (ETH)</option>
+                        <option value="sol">Solana (SOL)</option>
+                        <option value="usdt">Tether (USDT)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="depositAmount">Amount:</label>
+                    <input type="number" id="depositAmount" min="0.001" step="0.001" placeholder="Enter amount">
+                </div>
+                
+                <div class="qr-code-container">
+                    <div id="qrCode"></div>
+                </div>
+                
+                <div class="wallet-address">
+                    <span id="walletAddress">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</span>
+                    <button class="copy-btn" id="copyAddressBtn">Copy</button>
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="cancel-btn" id="cancelDeposit">Cancel</button>
+                    <button class="request-deposit-btn" id="submitDeposit">Request Deposit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Withdrawal</h2>
+                <span class="modal-close withdraw-close">&times;</span>
+            </div>
+            <div class="deposit-form">
+                <div class="form-group">
+                    <label for="withdrawCurrency">Select Currency:</label>
+                    <select id="withdrawCurrency" class="select-crypto">
+                        <option value="btc">Bitcoin (BTC)</option>
+                        <option value="eth">Ethereum (ETH)</option>
+                        <option value="sol">Solana (SOL)</option>
+                        <option value="usdt">Tether (USDT)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="withdrawAmount">Amount:</label>
+                    <input type="number" id="withdrawAmount" min="0.001" step="0.001" placeholder="Enter amount">
+                </div>
+                
+                <div class="form-group">
+                    <label for="withdrawAddress">Your Wallet Address:</label>
+                    <input type="text" id="withdrawAddress" placeholder="Enter your wallet address" style="width: 100%; padding: 10px 12px; background-color: #212630; border: 1px solid #2A2E39; border-radius: 4px; color: #D1D4DC; font-size: 14px;">
+                </div>
+                
+                <div id="kycWarning" style="background-color: #FF1744; color: white; padding: 10px; border-radius: 4px; margin: 15px 0; display: none;">
+                    <strong>KYC Required:</strong> You need to deposit at least 500 USDT before making a withdrawal.
+                </div>
+                
+                <div id="insufficientBalance" style="background-color: #FF1744; color: white; padding: 10px; border-radius: 4px; margin: 15px 0; display: none;">
+                    <strong>Insufficient Balance:</strong> You don't have enough funds for this withdrawal.
+                </div>
+                
+                <div class="modal-footer" style="display: flex; justify-content: space-between; margin-top: 25px;">
+                    <button class="cancel-btn" id="cancelWithdraw" style="background-color: #2A2E39; color: #A0A0A0; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; width: 48%;">Cancel</button>
+                    <button class="request-deposit-btn" id="submitWithdraw" style="background-color: #2962FF; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; width: 48%;">Request Withdrawal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('[DEBUG] Dashboard: Main script block started. userAuthToken:', localStorage.getItem('userAuthToken'), 'userLoggedInUser:', localStorage.getItem('userLoggedInUser'));
+
+        // Detect page refreshes and preserve auth state
+        window.addEventListener('beforeunload', function() {
+            // Store current auth state with timestamp
+            if (localStorage.getItem('userAuthToken')) {
+                sessionStorage.setItem('lastAuthState', JSON.stringify({
+                    token: localStorage.getItem('userAuthToken'),
+                    username: localStorage.getItem('userLoggedInUser'),
+                    timestamp: Date.now()
+                }));
+            }
+        });
+        
+        // On page load, check for stored auth state
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[DEBUG] Dashboard DOMContentLoaded: Starting auth check...');
+            
+            // Attempt to restore auth state from all possible sources
+            await preAuthCheck();
+            
+            const userToken = localStorage.getItem('userAuthToken');
+            const username = localStorage.getItem('userLoggedInUser'); 
+            console.log('[DEBUG] Dashboard: userAuthToken from localStorage:', userToken);
+            console.log('[DEBUG] Dashboard: userLoggedInUser from localStorage:', username);
+            
+            const userInfoContainer = document.getElementById('userInfoContainer');
+            const logoutButton = document.getElementById('logoutButton');
+
+            // MODIFIED CONDITION HERE
+            if (!userToken) { 
+                console.log('[DEBUG] Dashboard: NO userAuthToken found in localStorage! Redirecting to login.');
+                window.location.href = 'login.html';
+            } else {
+                // Refresh token immediately on page load
+                await refreshToken();
+                
+                console.log('[DEBUG] Dashboard: userAuthToken IS PRESENT. Proceeding with dashboard setup.');
+                // User is authenticated, setup user dashboard
+                if(userInfoContainer && username) {
+                    userInfoContainer.textContent = `User: ${username}`;
+                } else if (userInfoContainer) {
+                    userInfoContainer.textContent = 'User: (name not found but token exists)';
+                }
+
+                // Initialize dashboard-specific functions only for authenticated regular users
+                console.log('[DEBUG] Dashboard: fetchAndDisplayBalance CALL RE-ENABLED');
+                fetchAndDisplayBalance(); 
+                console.log('[DEBUG] Dashboard: startMarketPriceUpdates CALL RE-ENABLED');
+                startMarketPriceUpdates();
+                console.log('[DEBUG] Dashboard: Calling setupInstrumentClickHandlers');
+                setupInstrumentClickHandlers(); // Enabling instrument click functionality
+            }
+
+            if(logoutButton) {
+                logoutButton.addEventListener('click', function() {
+                    console.log('[DEBUG] Dashboard: Logout button clicked.');
+                    localStorage.removeItem('userAuthToken');
+                    localStorage.removeItem('userLoggedInUser');
+                    localStorage.removeItem('isAdmin');
+                    // Also clear session storage
+                    sessionStorage.removeItem('lastAuthState');
+                    window.location.href = 'login.html';
+                });
+            }
+            
+            console.log('[DEBUG] Dashboard: Auth check logic partially restored.');
+            
+            // Function to set up instrument click handlers (ensure it's defined)
+            function setupInstrumentClickHandlers() {
+                const instrumentItems = document.querySelectorAll('.combined-instrument-list li');
+                
+                instrumentItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        // Get the TradingView symbol from data attribute
+                        const tvSymbol = this.getAttribute('data-symbol');
+                        
+                        if (!tvSymbol) return;
+                        
+                        // Get the instrument name
+                        const symbolName = this.querySelector('.symbol-name').textContent;
+                        
+                        // Update the TradingView chart
+                        if (tvSymbol) {
+                            createTradingViewWidget(tvSymbol);
+                            
+                            // Update order panel title
+                            document.getElementById('orderPanelSymbol').textContent = symbolName.includes('/') ? 
+                                symbolName.replace('/', '') : symbolName;
+                            
+                            // Update active tab in currency pair tabs
+                            const tabButtons = document.querySelectorAll('.currency-pair-tabs button');
+                            tabButtons.forEach(button => {
+                                if (button.textContent.trim() === symbolName || 
+                                    (symbolName === 'XAU/USD' && button.textContent.trim() === 'XAUUSD')) {
+                                    button.classList.add('active');
+                                } else {
+                                    button.classList.remove('active');
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+            
+            // Set up deposit button click handler
+            const depositButton = document.getElementById('depositButton');
+            const depositModal = document.getElementById('depositModal');
+            const modalClose = document.querySelector('.modal-close');
+            const cancelDeposit = document.getElementById('cancelDeposit');
+            
+            if (depositButton) {
+                depositButton.addEventListener('click', function() {
+                    depositModal.style.display = 'block';
+                    
+                    // Generate QR code when modal opens
+                    const cryptoCurrency = document.getElementById('cryptoCurrency').value;
+                    const walletAddress = document.getElementById('walletAddress').textContent;
+                    generateQRCode(walletAddress);
+                    
+                    // Update QR when currency changes
+                    document.getElementById('cryptoCurrency').addEventListener('change', function() {
+                        generateQRCode(walletAddress);
+                    });
+                });
+            }
+            
+            if (modalClose) {
+                modalClose.addEventListener('click', function() {
+                    depositModal.style.display = 'none';
+                });
+            }
+            
+            if (cancelDeposit) {
+                cancelDeposit.addEventListener('click', function() {
+                    depositModal.style.display = 'none';
+                });
+            }
+            
+            // Close modal when clicking outside of it
+            window.addEventListener('click', function(event) {
+                if (event.target === depositModal) {
+                    depositModal.style.display = 'none';
+                }
+                if (event.target === withdrawModal) {
+                    withdrawModal.style.display = 'none';
+                }
+            });
+            
+            // Set up withdraw button click handler
+            const withdrawButton = document.getElementById('withdrawButton');
+            const withdrawModal = document.getElementById('withdrawModal');
+            const withdrawClose = document.querySelector('.withdraw-close');
+            const cancelWithdraw = document.getElementById('cancelWithdraw');
+            
+            if (withdrawButton) {
+                withdrawButton.addEventListener('click', function() {
+                    withdrawModal.style.display = 'block';
+                    
+                    // Hide any previous warnings when modal opens
+                    const kycWarning = document.getElementById('kycWarning');
+                    const insufficientBalance = document.getElementById('insufficientBalance');
+                    
+                    if (kycWarning) kycWarning.style.display = 'none';
+                    if (insufficientBalance) insufficientBalance.style.display = 'none';
+                });
+            }
+            
+            if (withdrawClose) {
+                withdrawClose.addEventListener('click', function() {
+                    withdrawModal.style.display = 'none';
+                });
+            }
+            
+            if (cancelWithdraw) {
+                cancelWithdraw.addEventListener('click', function() {
+                    withdrawModal.style.display = 'none';
+                });
+            }
+            
+            // Helper function to calculate total deposits
+            function getTotalDeposits() {
+                const deposits = JSON.parse(localStorage.getItem('demoDeposits') || '[]');
+                let total = 0;
+                
+                deposits.forEach(deposit => {
+                    if (deposit.status === 'approved') {
+                        total += parseFloat(deposit.amount);
+                    }
+                });
+                
+                return total;
+            }
+            
+            // Set up submit withdrawal button
+            const submitWithdraw = document.getElementById('submitWithdraw');
+            if (submitWithdraw) {
+                submitWithdraw.addEventListener('click', async function() {
+                    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                    const currency = document.getElementById('withdrawCurrency').value;
+                    const address = document.getElementById('withdrawAddress').value;
+                    const userAuthToken = localStorage.getItem('userAuthToken'); // Use userAuthToken
+                    
+                    // Validate input
+                    if (!amount || isNaN(amount) || amount <= 0) {
+                        alert('Please enter a valid amount');
+                        return;
+                    }
+                    
+                    if (!address) {
+                        alert('Please enter a valid wallet address');
+                        return;
+                    }
+                    
+                    // Check if user has enough balance
+                    const balance = parseFloat(localStorage.getItem('userBalance') || '0');
+                    const insufficientBalance = document.getElementById('insufficientBalance');
+                    
+                    if (amount > balance) {
+                        if (insufficientBalance) insufficientBalance.style.display = 'block';
+                        // Make insufficient balance message disappear after 2 seconds
+                        setTimeout(() => {
+                            if (insufficientBalance) insufficientBalance.style.display = 'none';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    // Check KYC requirement (minimum 500 USDT deposit)
+                    const totalDeposits = getTotalDeposits();
+                    const kycWarning = document.getElementById('kycWarning');
+                    
+                    if (totalDeposits < 500) {
+                        if (kycWarning) kycWarning.style.display = 'block';
+                        // Make KYC warning disappear after 2 seconds
+                        setTimeout(() => {
+                            if (kycWarning) kycWarning.style.display = 'none';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    try {
+                        // Try the backend request first
+                        let success = false;
+                        try {
+                            const response = await fetch('http://localhost:3001/api/withdrawals', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${userAuthToken}` // Use userAuthToken
+                                },
+                                body: JSON.stringify({
+                                    amount,
+                                    currency,
+                                    address
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                const data = await response.json();
+                                success = true;
+                            }
+                        } catch (error) {
+                            // Backend request failed, continue with local storage approach
+                            console.warn('Backend request failed, using localStorage for demo:', error);
+                        }
+                        
+                        // Create a withdrawal record in localStorage
+                        const withdrawal = {
+                            id: Date.now().toString(),
+                            user_id: localStorage.getItem('userLoggedInUser'), // Use userLoggedInUser
+                            amount,
+                            currency,
+                            address,
+                            status: 'pending',
+                            created_at: new Date().toISOString()
+                        };
+                        
+                        // Store withdrawal in localStorage
+                        const withdrawals = JSON.parse(localStorage.getItem('demoWithdrawals') || '[]');
+                        withdrawals.push(withdrawal);
+                        localStorage.setItem('demoWithdrawals', JSON.stringify(withdrawals));
+                        
+                        // Update user's balance
+                        updateUserBalance(-amount);
+                        
+                        // Close modal and show notification
+                        withdrawModal.style.display = 'none';
+                        showNotification('Withdrawal Requested', `Your withdrawal of ${amount} ${currency.toUpperCase()} has been requested and is pending approval.`);
+                        
+                        // Reset form
+                        document.getElementById('withdrawAmount').value = '';
+                        document.getElementById('withdrawAddress').value = '';
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again later.');
+                    }
+                });
+            }
+            
+            // Function to ensure authentication before critical operations
+            async function preAuthCheck() {
+                // First check localStorage for the main token
+                let mainToken = localStorage.getItem('userAuthToken');
+                
+                if (!mainToken) {
+                    console.log('[DEBUG] No token in localStorage, trying alternative sources...');
+                    
+                    // Check sessionStorage for recent auth state
+                    const lastAuthState = sessionStorage.getItem('lastAuthState');
+                    if (lastAuthState) {
+                        try {
+                            const authState = JSON.parse(lastAuthState);
+                            const now = Date.now();
+                            const fiveMinutes = 5 * 60 * 1000;
+                            
+                            if (authState.token && authState.timestamp && (now - authState.timestamp < fiveMinutes)) {
+                                // Restore auth state to localStorage
+                                localStorage.setItem('userAuthToken', authState.token);
+                                localStorage.setItem('userLoggedInUser', authState.username);
+                                console.log('[DEBUG] Auth restored from sessionStorage');
+                                mainToken = authState.token;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing auth state from sessionStorage:', e);
+                        }
+                    }
+                    
+                    // If still no token, try backup in localStorage
+                    if (!mainToken) {
+                        const backupToken = localStorage.getItem('userToken_backup');
+                        const username = localStorage.getItem('userLoggedInUser');
+                        
+                        if (backupToken && username) {
+                            localStorage.setItem('userAuthToken', backupToken);
+                            console.log('[DEBUG] Auth restored from backup token');
+                            mainToken = backupToken;
+                        }
+                    }
+                    
+                    // If we still don't have a token, redirect to login
+                    if (!mainToken) {
+                        console.warn('No valid auth token found, redirecting to login');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+                }
+                
+                // Verify the token with the server
+                try {
+                    const response = await fetch('http://localhost:3001/api/auth/check', {
+                        headers: {
+                            'Authorization': `Bearer ${mainToken}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        // Token is invalid, try to refresh it
+                        const refreshed = await refreshToken();
+                        if (!refreshed) {
+                            console.warn('Token validation failed and refresh failed, redirecting to login');
+                            window.location.href = 'login.html';
+                            return false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error validating token:', error);
+                    // On network error, don't automatically logout - the server might be temporarily unavailable
+                }
+                
+                return true;
+            }
+            
+            // Set up submit deposit button
+            const submitDeposit = document.getElementById('submitDeposit');
+            if (submitDeposit) {
+                // Add a flag to prevent duplicate submissions
+                let isSubmitting = false;
+                
+                submitDeposit.addEventListener('click', async function() {
+                    // Prevent duplicate submissions
+                    if (isSubmitting) return;
+                    
+                    // Ensure user is authenticated before proceeding
+                    if (!await preAuthCheck()) return;
+                    
+                    const amount = document.getElementById('depositAmount').value;
+                    if (!amount || isNaN(amount) || amount <= 0) {
+                        alert('Please enter a valid amount');
+                        return;
+                    }
+                    
+                    const currency = document.getElementById('cryptoCurrency').value || 'btc';
+                    const userAuthToken = localStorage.getItem('userAuthToken'); // Use userAuthToken
+                    
+                    try {
+                        // Set submission flag to true
+                        isSubmitting = true;
+                        
+                        // Show loading state
+                        this.textContent = "Processing...";
+                        this.disabled = true;
+                        
+                        // Create backup of auth state before the request
+                        sessionStorage.setItem('lastAuthState', JSON.stringify({
+                            token: localStorage.getItem('userAuthToken'),
+                            username: localStorage.getItem('userLoggedInUser'),
+                            timestamp: Date.now()
+                        }));
+                        
+                        const response = await fetch('http://localhost:3001/api/deposits', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${userAuthToken}` // Use userAuthToken
+                            },
+                            body: JSON.stringify({ amount, currency })
+                        });
+                        
+                        // Reset button state
+                        this.textContent = "Request Deposit";
+                        this.disabled = false;
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            depositModal.style.display = 'none';
+                            document.getElementById('depositAmount').value = '';
+                            showNotification('Deposit Requested', `Your deposit of ${amount} USD has been requested and is pending approval.`);
+                            
+                            // Refresh token immediately after deposit submission
+                            await refreshToken();
+                            
+                            // Optionally refresh balance after a delay to check for updates
+                            setTimeout(fetchAndDisplayBalance, 2000);
+                        } else {
+                            // If response is not ok, try to refresh token
+                            await refreshToken();
+                            
+                            const errorData = await response.json().catch(() => ({}));
+                            console.error('Deposit failed:', errorData);
+                            alert(errorData.message || 'Deposit request failed. Please try again.');
+                        }
+                    } catch (error) {
+                        // Reset button on error
+                        this.textContent = "Request Deposit";
+                        this.disabled = false;
+                        
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again later.');
+                    } finally {
+                        // Reset submission flag when the request completes (success or error)
+                        isSubmitting = false;
+                    }
+                });
+            }
+            
+            // Set up buy/sell buttons
+            const buyButton = document.querySelector('.buy-button');
+            const sellButton = document.querySelector('.sell-button');
+            const userAuthTokenForTrades = localStorage.getItem('userAuthToken'); // Get token once for trade functions
+            
+            if (buyButton) {
+                buyButton.addEventListener('click', async function() {
+                    const volume = parseFloat(document.getElementById('volume').value);
+                    const stopLossValue = document.getElementById('stopLossVal').value;
+                    const takeProfitValue = document.getElementById('takeProfitVal').value;
+                    const symbol = document.getElementById('orderPanelSymbol').textContent;
+                    
+                    if (!volume || isNaN(volume) || volume <= 0) {
+                        alert('Please enter a valid volume');
+                        return;
+                    }
+                    
+                    // Get current price from chart
+                    let price = 0;
+                    if (window.tradingViewChart) {
+                        const symbolInfo = window.tradingViewChart.symbolInfo();
+                        price = symbolInfo && symbolInfo.last_price ? symbolInfo.last_price : 3000; // Default fallback price
+                    } else {
+                        // Fallback to static prices for demo
+                        const marketPrices = {
+                            'XAUUSD': 3183.45,
+                            'EUR/USD': 1.1211,
+                            'BTC': 103950.70,
+                            'AAPL': 210.50,
+                            'GBP/USD': 1.3321,
+                            'USD/JPY': 145.29,
+                            'USTEC': 21325.00,
+                            'USOIL': 61.05
+                        };
+                        price = marketPrices[symbol] || 100;
+                    }
+                    
+                    // Validate stop loss and take profit values
+                    let stopLoss = null;
+                    let takeProfit = null;
+                    
+                    if (stopLossValue && !isNaN(parseFloat(stopLossValue))) {
+                        stopLoss = parseFloat(stopLossValue);
+                        // For buy orders, stop loss must be below current price
+                        if (stopLoss >= price) {
+                            alert('Stop Loss must be below the current price for buy orders');
+                            return;
+                        }
+                    }
+                    
+                    if (takeProfitValue && !isNaN(parseFloat(takeProfitValue))) {
+                        takeProfit = parseFloat(takeProfitValue);
+                        // For buy orders, take profit must be above current price
+                        if (parseFloat(takeProfit) <= parseFloat(price)) {
+                            alert('Take Profit must be above the current price for buy orders');
+                            return;
+                        }
+                    }
+                    
+                    try {
+                        // Try the backend request first
+                        let success = false;
+                        try {
+                            const response = await fetch('http://localhost:3001/api/trades/buy', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${userAuthTokenForTrades}` // Use userAuthTokenForTrades
+                                },
+                                body: JSON.stringify({
+                                    symbol,
+                                    amount: volume,
+                                    price,
+                                    stopLoss: stopLoss,
+                                    takeProfit: takeProfit
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (response.ok) {
+                                success = true;
+                            } else if (data.message === 'Insufficient balance') {
+                                showNotification('Trade Failed', `Insufficient balance. Required: ${data.required}, Available: ${data.available}`);
+                                return;
+                            }
+                        } catch (error) {
+                            // Backend request failed, continue with local storage approach
+                            console.warn('Backend request failed, using localStorage for demo:', error);
+                        }
+                        
+                        // Create a trade record in localStorage for this demo
+                        const totalValue = volume * price;
+                        const trade = {
+                            id: Date.now().toString(),
+                            user_id: localStorage.getItem('userLoggedInUser'), // Use userLoggedInUser
+                            type: 'buy',
+                            symbol: symbol,
+                            amount: volume,
+                            price: price,
+                            total_value: totalValue,
+                            stop_loss: stopLoss,
+                            take_profit: takeProfit,
+                            created_at: new Date().toISOString(),
+                            status: 'open'  // Always set status to 'open' regardless of stop loss/take profit
+                        };
+                        
+                        // Store in localStorage
+                        const trades = JSON.parse(localStorage.getItem('demoTrades') || '[]');
+                        trades.push(trade);
+                        localStorage.setItem('demoTrades', JSON.stringify(trades));
+                        
+                        // Clear the stop loss and take profit fields
+                        document.getElementById('stopLossVal').value = '';
+                        document.getElementById('takeProfitVal').value = '';
+                        
+                        // Update user's balance (subtract the cost of the trade)
+                        updateUserBalance(-totalValue);
+                        
+                        // Show success notification
+                        showNotification('Buy Order', `Successfully bought ${volume} lot of ${symbol} at ${price}`);
+                        
+                        // Refresh positions immediately
+                        fetchPositions('open');
+                        
+                        // Add trade marker to chart
+                        if (window.tradingViewChart) {
+                            addTradeMarker({
+                                type: 'Buy',
+                                symbol,
+                                volume,
+                                openPrice: price,
+                                stopLoss,
+                                takeProfit
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error executing buy order:', error);
+                        showNotification('Error', 'Could not complete the buy order');
+                    }
+                });
+            }
+            
+            if (sellButton) {
+                sellButton.addEventListener('click', async function() {
+                    const volume = parseFloat(document.getElementById('volume').value);
+                    const stopLossValue = document.getElementById('stopLossVal').value;
+                    const takeProfitValue = document.getElementById('takeProfitVal').value;
+                    const symbol = document.getElementById('orderPanelSymbol').textContent;
+                    
+                    if (!volume || isNaN(volume) || volume <= 0) {
+                        alert('Please enter a valid volume');
+                        return;
+                    }
+                    
+                    // Get current price from chart
+                    let price = 0;
+                    if (window.tradingViewChart) {
+                        const symbolInfo = window.tradingViewChart.symbolInfo();
+                        price = symbolInfo && symbolInfo.last_price ? symbolInfo.last_price : 3000; // Default fallback price
+                    } else {
+                        // Fallback to static prices for demo
+                        const marketPrices = {
+                            'XAUUSD': 3183.45,
+                            'EUR/USD': 1.1211,
+                            'BTC': 103950.70,
+                            'AAPL': 210.50,
+                            'GBP/USD': 1.3321,
+                            'USD/JPY': 145.29,
+                            'USTEC': 21325.00,
+                            'USOIL': 61.05
+                        };
+                        price = marketPrices[symbol] || 100;
+                    }
+                    
+                    // Validate stop loss and take profit values
+                    let stopLoss = null;
+                    let takeProfit = null;
+                    
+                    if (stopLossValue && !isNaN(parseFloat(stopLossValue))) {
+                        stopLoss = parseFloat(stopLossValue);
+                        // For sell orders, stop loss must be above current price
+                        if (parseFloat(stopLoss) <= parseFloat(price)) {
+                            alert('Stop Loss must be above the current price for sell orders');
+                            return;
+                        }
+                    }
+                    
+                    if (takeProfitValue && !isNaN(parseFloat(takeProfitValue))) {
+                        takeProfit = parseFloat(takeProfitValue);
+                        // For sell orders, take profit must be below current price
+                        if (parseFloat(takeProfit) >= parseFloat(price)) {
+                            alert('Take Profit must be below the current price for sell orders');
+                            return;
+                        }
+                    }
+                    
+                    try {
+                        // Try the backend request first
+                        let success = false;
+                        try {
+                            const response = await fetch('http://localhost:3001/api/trades/sell', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${userAuthTokenForTrades}` // Use userAuthTokenForTrades
+                                },
+                                body: JSON.stringify({
+                                    symbol,
+                                    amount: volume,
+                                    price,
+                                    stopLoss: stopLoss,
+                                    takeProfit: takeProfit
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            if (response.ok) {
+                                success = true;
+                            }
+                        } catch (error) {
+                            // Backend request failed, continue with local storage approach
+                            console.warn('Backend request failed, using localStorage for demo:', error);
+                        }
+                        
+                        // Create a trade record in localStorage for this demo
+                        const totalValue = volume * price;
+                        const trade = {
+                            id: Date.now().toString(),
+                            user_id: localStorage.getItem('userLoggedInUser'), // Use userLoggedInUser
+                            type: 'sell',
+                            symbol: symbol,
+                            amount: volume,
+                            price: price,
+                            total_value: totalValue,
+                            stop_loss: stopLoss,
+                            take_profit: takeProfit,
+                            created_at: new Date().toISOString(),
+                            status: 'open'  // Always set status to 'open' regardless of stop loss/take profit
+                        };
+                        
+                        // Store in localStorage
+                        const trades = JSON.parse(localStorage.getItem('demoTrades') || '[]');
+                        trades.push(trade);
+                        localStorage.setItem('demoTrades', JSON.stringify(trades));
+                        
+                        // Clear the stop loss and take profit fields
+                        document.getElementById('stopLossVal').value = '';
+                        document.getElementById('takeProfitVal').value = '';
+                        
+                        // Update user's balance (add the value of the trade for selling)
+                        updateUserBalance(totalValue);
+                        
+                        // Show success notification
+                        showNotification('Sell Order', `Successfully sold ${volume} lot of ${symbol} at ${price}`);
+                        
+                        // Refresh positions immediately
+                        fetchPositions('open');
+                        
+                        // Add trade marker to chart
+                        if (window.tradingViewChart) {
+                            addTradeMarker({
+                                type: 'Sell',
+                                symbol,
+                                volume,
+                                openPrice: price,
+                                stopLoss,
+                                takeProfit
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error executing sell order:', error);
+                        showNotification('Error', 'Could not complete the sell order');
+                    }
+                });
+            }
+            
+            // Set up bottom panel tab buttons (OPEN/PENDING/CLOSED)
+            const bottomPanelTabs = document.querySelectorAll('.bottom-panel-tabs button');
+            bottomPanelTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    bottomPanelTabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Get the tab name and fetch corresponding positions
+                    const tabName = this.textContent.trim().toLowerCase();
+                    fetchPositions(tabName);
+                });
+            });
+            
+            // Fetch positions on initial load
+            fetchPositions('open');
+            
+            // Handle order type tabs (Market/Pending)
+            const orderTypeTabs = document.querySelectorAll('.order-type-tabs button');
+            orderTypeTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    orderTypeTabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Get the tab text (Market or Pending)
+                    const orderType = this.textContent.trim();
+                    
+                    // Show/hide appropriate form
+                    const marketForm = document.getElementById('marketOrderForm');
+                    const pendingForm = document.getElementById('pendingOrderForm');
+                    
+                    if (orderType === 'Market') {
+                        if (marketForm) marketForm.style.display = 'block';
+                        if (pendingForm) pendingForm.style.display = 'none';
+                    } else if (orderType === 'Pending') {
+                        if (marketForm) marketForm.style.display = 'none';
+                        if (pendingForm) pendingForm.style.display = 'block';
+                    }
+                });
+            });
+            
+            // Set up pending order buttons
+            const placePendingOrderBtn = document.querySelector('.place-pending-order');
+            let pendingOrderDirection = 'buy'; // Default direction
+            
+            // Set direction buttons
+            const pendingBuyBtn = document.getElementById('pendingBuyBtn');
+            const pendingSellBtn = document.getElementById('pendingSellBtn');
+            
+            if (pendingBuyBtn) {
+                pendingBuyBtn.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent form submission
+                    pendingOrderDirection = 'buy';
+                    pendingBuyBtn.style.opacity = '1';
+                    pendingSellBtn.style.opacity = '0.7';
+                });
+            }
+            
+            if (pendingSellBtn) {
+                pendingSellBtn.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent form submission
+                    pendingOrderDirection = 'sell';
+                    pendingSellBtn.style.opacity = '1';
+                    pendingBuyBtn.style.opacity = '0.7';
+                });
+            }
+            
+            if (placePendingOrderBtn) {
+                placePendingOrderBtn.addEventListener('click', function() {
+                    const symbol = document.getElementById('orderPanelSymbol').textContent;
+                    const price = parseFloat(document.getElementById('pendingPrice').value);
+                    const volume = parseFloat(document.getElementById('pendingVolume').value);
+                    const stopLoss = document.getElementById('pendingStopLoss').value;
+                    const takeProfit = document.getElementById('pendingTakeProfit').value;
+                    const orderType = document.getElementById('pendingOrderType').value;
+                    
+                    if (!price || isNaN(price) || price <= 0) {
+                        alert('Please enter a valid price');
+                        return;
+                    }
+                    
+                    if (!volume || isNaN(volume) || volume <= 0) {
+                        alert('Please enter a valid volume');
+                        return;
+                    }
+                    
+                    // In a real app, you would send the pending order to the backend
+                    // For demo purposes, we'll show a notification
+                    showNotification(
+                        'Pending Order', 
+                        `Placed ${orderType} ${pendingOrderDirection} order for ${volume} lot of ${symbol} at ${price}`
+                    );
+                    
+                    // Reset fields
+                    document.getElementById('pendingPrice').value = '';
+                    document.getElementById('pendingVolume').value = '0.01';
+                    document.getElementById('pendingStopLoss').value = '';
+                    document.getElementById('pendingTakeProfit').value = '';
+                    
+                    // Switch to the PENDING tab and refresh
+                    const pendingTab = Array.from(document.querySelectorAll('.bottom-panel-tabs button')).find(
+                        tab => tab.textContent.trim() === 'PENDING'
+                    );
+                    if (pendingTab) {
+                        pendingTab.click();
+                    }
+                });
+            }
+        });
+
+        // Function to update user's balance
+        function updateUserBalance(amount) {
+            // Get current balance
+            let balance = parseFloat(localStorage.getItem('userBalance') || '1000.00');
+            
+            // Update balance
+            balance += amount;
+            
+            // Save back to localStorage
+            localStorage.setItem('userBalance', balance.toFixed(2));
+            
+            // Update UI
+            updateBalanceDisplay(balance);
+        }
+        
+        // Function to update balance display in the UI
+        function updateBalanceDisplay(balance) {
+            console.log('[DEBUG] updateBalanceDisplay: Updating UI with balance:', balance);
+            const balanceElements = [
+                document.getElementById('balanceVal'),
+                document.getElementById('equityVal'),
+                document.getElementById('freeMarginVal'),
+                document.getElementById('topHeaderBalance')
+            ];
+            
+            balanceElements.forEach(el => {
+                if (el) el.textContent = balance.toFixed(2) + " USD";
+            });
+            console.log('[DEBUG] updateBalanceDisplay: UI update complete.');
+        }
+        
+        // Token refresh function to prevent session expiration
+        async function refreshToken() {
+            const token = localStorage.getItem('userAuthToken');
+            
+            if (!token) {
+                console.warn('Cannot refresh token: No token found in localStorage');
+                return false;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include' // This enables sending cookies with the request
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Store the new token in multiple places for redundancy
+                    localStorage.setItem('userAuthToken', data.token);
+                    
+                    // Store token backup
+                    localStorage.setItem('userToken_backup', data.token);
+                    
+                    // Also update session storage
+                    sessionStorage.setItem('lastAuthState', JSON.stringify({
+                        token: data.token,
+                        username: localStorage.getItem('userLoggedInUser'),
+                        timestamp: Date.now()
+                    }));
+                    
+                    console.log('Token refreshed successfully and stored in multiple locations');
+                    return true;
+                } else {
+                    // Try to restore from backup if refresh fails
+                    const backupToken = localStorage.getItem('userToken_backup');
+                    if (backupToken && backupToken !== token) {
+                        localStorage.setItem('userAuthToken', backupToken);
+                        console.log('Used backup token after refresh failure');
+                        return true;
+                    }
+                    
+                    console.warn('Token refresh failed, may need to login again soon');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+                return false;
+            }
+        }
+        
+        // Periodic auth state update to keep it fresh in sessionStorage
+        setInterval(function() {
+            if (localStorage.getItem('userAuthToken')) {
+                sessionStorage.setItem('lastAuthState', JSON.stringify({
+                    token: localStorage.getItem('userAuthToken'),
+                    username: localStorage.getItem('userLoggedInUser'),
+                    timestamp: Date.now()
+                }));
+                console.log('[DEBUG] Auth state updated in sessionStorage');
+            }
+        }, 60000); // Update every minute
+        
+        // Verify authentication periodically
+        setInterval(async function() {
+            await preAuthCheck();
+        }, 10000); // Check every 10 seconds
+        
+        // Check and refresh token periodically (every 30 minutes)
+        setInterval(refreshToken, 30 * 60 * 1000);
+        
+        // Also refresh token on page load
+        refreshToken();
+        
+        // Fetch and update the user's balance from the backend
+        async function fetchAndDisplayBalance() {
+            console.log('[DEBUG] fetchAndDisplayBalance: Function START');
+            const token = localStorage.getItem('userAuthToken'); 
+            console.log('[DEBUG] fetchAndDisplayBalance: Token at start of function:', token);
+
+            try {
+                console.log('[DEBUG] fetchAndDisplayBalance: Attempting to fetch balance from backend...');
+                let backendBalance = null;
+                let responseStatus = null;
+                let responseBody = null;
+
+                try {
+                    console.log('[DEBUG] fetchAndDisplayBalance: Before fetch - userAuthToken:', localStorage.getItem('userAuthToken'));
+                    const response = await fetch('http://localhost:3001/api/auth/balance', {
+                        headers: {
+                            'Authorization': token ? `Bearer ${token}` : ''
+                        }
+                    });
+                    console.log('[DEBUG] fetchAndDisplayBalance: After fetch - userAuthToken:', localStorage.getItem('userAuthToken'));
+                    
+                    responseStatus = response.status;
+                    console.log('[DEBUG] fetchAndDisplayBalance: Backend response status:', responseStatus);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        responseBody = data;
+                        console.log('[DEBUG] fetchAndDisplayBalance: Backend response OK. Data:', data);
+                        backendBalance = parseFloat(data.balance);
+                        
+                        console.log('[DEBUG] fetchAndDisplayBalance: Storing backend balance to localStorage as userBalance:', backendBalance.toFixed(2));
+                        localStorage.setItem('userBalance', backendBalance.toFixed(2));
+                    } else {
+                        console.warn('[DEBUG] fetchAndDisplayBalance: Backend response NOT OK. Status:', responseStatus);
+                        try {
+                            const errorData = await response.json();
+                            responseBody = errorData;
+                            console.warn('[DEBUG] fetchAndDisplayBalance: Backend error data:', errorData);
+                        } catch (e) {
+                            console.warn('[DEBUG] fetchAndDisplayBalance: Could not parse error response as JSON.');
+                        }
+                        
+                        // Try to check auth status directly
+                        const authResponse = await fetch('http://localhost:3001/api/auth/check', {
+                            headers: {
+                                'Authorization': token ? `Bearer ${token}` : ''
+                            }
+                        });
+                        
+                        if (authResponse.ok) {
+                            // We're authenticated, try refreshing token
+                            const refreshed = await refreshToken();
+                            if (refreshed) {
+                                // Try fetching the balance again with the new token
+                                console.log('[DEBUG] fetchAndDisplayBalance: Token refreshed, trying again');
+                                return fetchAndDisplayBalance();
+                            }
+                        } else {
+                            // If we're not authenticated, redirect to login
+                            console.error('[DEBUG] fetchAndDisplayBalance: Auth check failed, redirecting to login');
+                            window.location.href = 'login.html';
+                            return Promise.reject(new Error('Authentication failed'));
+                        }
+                    }
+                } catch (error) {
+                    console.error('[DEBUG] fetchAndDisplayBalance: Error during fetch operation:', error);
+                    // Log localStorage state on fetch error too
+                    console.log('[DEBUG] fetchAndDisplayBalance: On fetch error - userAuthToken:', localStorage.getItem('userAuthToken'));
+                    return Promise.reject(error);
+                }
+                
+                console.log('[DEBUG] fetchAndDisplayBalance: Determining final balance to display...');
+                // If backend balance retrieval failed OR resulted in a non-OK response, use localStorage as fallback
+                const balanceToDisplay = (backendBalance !== null && responseStatus && responseStatus >= 200 && responseStatus < 300)
+                    ? backendBalance
+                    : parseFloat(localStorage.getItem('userBalance') || '1000.00'); // Default to 1000 if nothing found
+                
+                console.log('[DEBUG] fetchAndDisplayBalance: Final balance to display:', balanceToDisplay);
+                updateBalanceDisplay(balanceToDisplay);
+                return Promise.resolve(balanceToDisplay);
+                
+            } catch (err) {
+                console.error('[DEBUG] fetchAndDisplayBalance: Outer catch block error:', err);
+                console.log('[DEBUG] fetchAndDisplayBalance: On outer catch - userAuthToken:', localStorage.getItem('userAuthToken'));
+                // Use localStorage balance as fallback in case of unexpected errors
+                const fallbackBalance = parseFloat(localStorage.getItem('userBalance') || '1000.00');
+                console.log('[DEBUG] fetchAndDisplayBalance: Using fallback balance due to outer error:', fallbackBalance);
+                updateBalanceDisplay(fallbackBalance);
+                return Promise.resolve(fallbackBalance);
+            }
+        }
+
+        // Initialize top header balance
+        function updateTopHeaderBalance() {
+            const balanceEl = document.getElementById('balanceVal');
+            const topHeaderBalance = document.getElementById('topHeaderBalance');
+            
+            if (balanceEl && topHeaderBalance) {
+                topHeaderBalance.textContent = balanceEl.textContent;
+            }
+        }
+
+        // Show notification for trading actions
+        function showNotification(title, message) {
+            const notification = document.createElement('div');
+            notification.className = 'deposit-notification';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <div class="notification-icon">✓</div>
+                    <div class="notification-message">
+                        <div class="notification-title">${title}</div>
+                        <div class="notification-details">
+                            <span>${message}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 5 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 5000);
+        }
+
+        // Function to generate QR code
+        function generateQRCode(address) {
+            try {
+                const qrContainer = document.getElementById('qrCode');
+                qrContainer.innerHTML = ''; // Clear previous QR code
+                
+                // Create QR code using the included library
+                const qr = qrcode(0, 'L');
+                qr.addData(address);
+                qr.make();
+                
+                // Render QR code with proper sizing
+                const img = qr.createImgTag(5);
+                qrContainer.innerHTML = img;
+                
+                // Adjust the image to fit the container
+                const qrImage = qrContainer.querySelector('img');
+                if (qrImage) {
+                    qrImage.style.maxWidth = '100%';
+                    qrImage.style.height = 'auto';
+                    qrImage.style.display = 'block';
+                    qrImage.style.margin = '0 auto';
+                }
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                document.getElementById('qrCode').innerHTML = '<div style="text-align:center;color:#E0E0E0;padding:20px;">QR Generation Error</div>';
+            }
+        }
+
+        // Function to fetch and display user positions
+        async function fetchPositions(status) {
+            const token = localStorage.getItem('userAuthToken');
+            const currentUserId = localStorage.getItem('userLoggedInUser');
+            if (!token || !currentUserId) return;
+            
+            try {
+                // For demo purposes, create some fake positions if backend call fails
+                let positions = [];
+                
+                try {
+                    const response = await fetch(`http://localhost:3001/api/trades/positions?status=${status}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        positions = await response.json();
+                    } else {
+                        console.warn('Could not fetch real positions, using demo data');
+                    }
+                } catch (error) {
+                    console.warn('Error fetching positions from backend, using demo data:', error);
+                }
+                
+                // If no positions or error from backend, use demo data for this fake trading site
+                if (positions.length === 0) {
+                    // Get stored trades from localStorage
+                    const storedTrades = JSON.parse(localStorage.getItem('demoTrades') || '[]');
+                    
+                    // Filter based on status AND current user_id 
+                    if (status === 'open') {
+                        positions = storedTrades.filter(trade => trade.status === 'open' && trade.user_id === currentUserId);
+                    } else if (status === 'closed') {
+                        positions = storedTrades.filter(trade => trade.status === 'closed' && trade.user_id === currentUserId);
+                    } else if (status === 'pending') {
+                        positions = storedTrades.filter(trade => trade.status === 'pending' && trade.user_id === currentUserId);
+                    }
+                }
+                
+                displayPositions(positions, status);
+                
+                // Start price updater if showing open positions
+                if (status === 'open' && positions.length > 0) {
+                    startPriceUpdater(positions);
+                }
+            } catch (error) {
+                console.error('Error in fetchPositions:', error);
+                // Even if error, still display demo data
+                const storedTrades = JSON.parse(localStorage.getItem('demoTrades') || '[]');
+                const filteredTrades = storedTrades.filter(trade => 
+                    (status === 'open' && trade.status === 'open' && trade.user_id === currentUserId) ||
+                    (status === 'closed' && trade.status === 'closed' && trade.user_id === currentUserId) ||
+                    (status === 'pending' && trade.status === 'pending' && trade.user_id === currentUserId)
+                );
+                displayPositions(filteredTrades, status);
+                
+                // Start price updater if showing open positions
+                if (status === 'open' && filteredTrades.length > 0) {
+                    startPriceUpdater(filteredTrades);
+                }
+            }
+        }
+        
+        // Function to start updating prices periodically
+        let priceUpdaterInterval;
+        function startPriceUpdater(positions) {
+            // Clear any existing interval
+            if (priceUpdaterInterval) {
+                clearInterval(priceUpdaterInterval);
+            }
+            
+            // First update immediately
+            updatePositionPrices(positions);
+            
+            // Then set interval for continuous updates
+            priceUpdaterInterval = setInterval(() => {
+                updatePositionPrices(positions);
+            }, 2000); // Update every 2 seconds
+        }
+        
+        // Function to update prices in the table
+        function updatePositionPrices(positions) {
+            const tableRows = document.querySelectorAll('.positions-table tbody tr');
+            
+            tableRows.forEach((row, index) => {
+                if (index < positions.length) {
+                    const position = positions[index];
+                    const priceCell = row.cells[4]; // Current Price column
+                    const profitCell = row.cells[7]; // Profit column
+                    
+                    if (priceCell && profitCell) {
+                        // Generate a slightly different price each time (random walk)
+                        let currentPrice;
+                        if (position.type === 'buy') {
+                            // For buy positions, price generally goes up (for the demo)
+                            const basePrice = parseFloat(position.price);
+                            const randomFactor = Math.random() * 0.02 - 0.005; // -0.5% to +1.5% change
+                            const priceChange = basePrice * randomFactor;
+                            
+                            // Get current displayed price or use calculated initial price
+                            const displayedPrice = parseFloat(priceCell.textContent) || (basePrice * 1.2);
+                            currentPrice = displayedPrice + priceChange;
+                            
+                            // Ensure price doesn't go too low for buy positions
+                            currentPrice = Math.max(currentPrice, basePrice * 1.1);
+                        } else {
+                            // For sell positions, price generally goes down (for the demo)
+                            const basePrice = parseFloat(position.price);
+                            const randomFactor = Math.random() * 0.02 - 0.015; // -1.5% to +0.5% change
+                            const priceChange = basePrice * randomFactor;
+                            
+                            // Get current displayed price or use calculated initial price
+                            const displayedPrice = parseFloat(priceCell.textContent) || (basePrice * 0.9);
+                            currentPrice = displayedPrice + priceChange;
+                            
+                            // Ensure price doesn't go too high for sell positions
+                            currentPrice = Math.min(currentPrice, basePrice * 0.8);
+                        }
+                        
+                        // Calculate profit based on new price
+                        const totalValue = parseFloat(position.amount) * parseFloat(position.price);
+                        let profit;
+                        
+                        if (position.type === 'buy') {
+                            // For buy, profit = (current price - entry price) * amount
+                            profit = (currentPrice - parseFloat(position.price)) * parseFloat(position.amount);
+                        } else {
+                            // For sell, profit = (entry price - current price) * amount
+                            profit = (parseFloat(position.price) - currentPrice) * parseFloat(position.amount);
+                        }
+                        
+                        // Update cells
+                        priceCell.textContent = currentPrice.toFixed(2);
+                        profitCell.textContent = profit.toFixed(2);
+                        profitCell.style.color = profit >= 0 ? '#00B15D' : '#FF5B5A';
+                        
+                        // Check for stop loss and take profit conditions
+                        const stopLoss = position.stop_loss ? parseFloat(position.stop_loss) : null;
+                        const takeProfit = position.take_profit ? parseFloat(position.take_profit) : null;
+                        
+                        // For buy positions: stop loss is triggered when price falls below stop loss level
+                        // For sell positions: stop loss is triggered when price rises above stop loss level
+                        let stopLossTriggered = false;
+                        if (stopLoss !== null) {
+                            if (position.type === 'buy' && currentPrice <= stopLoss) {
+                                stopLossTriggered = true;
+                            } else if (position.type === 'sell' && currentPrice >= stopLoss) {
+                                stopLossTriggered = true;
+                            }
+                        }
+                        
+                        // For buy positions: take profit is triggered when price rises above take profit level
+                        // For sell positions: take profit is triggered when price falls below take profit level
+                        let takeProfitTriggered = false;
+                        if (takeProfit !== null) {
+                            if (position.type === 'buy' && currentPrice >= takeProfit) {
+                                takeProfitTriggered = true;
+                            } else if (position.type === 'sell' && currentPrice <= takeProfit) {
+                                takeProfitTriggered = true;
+                            }
+                        }
+                        
+                        // If either stop loss or take profit is triggered, close the position
+                        if (stopLossTriggered || takeProfitTriggered) {
+                            closePosition(position.id, currentPrice, stopLossTriggered ? 'Stop Loss' : 'Take Profit');
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to close a position automatically (for stop loss and take profit)
+        function closePosition(positionId, closingPrice, triggerType) {
+            // Get the trades from localStorage
+            const storedTrades = JSON.parse(localStorage.getItem('demoTrades') || '[]');
+            const currentUserId = localStorage.getItem('userLoggedInUser');
+            
+            // Find the trade to close
+            const tradeIndex = storedTrades.findIndex(trade => trade.id === positionId && trade.user_id === currentUserId);
+            
+            if (tradeIndex !== -1) {
+                const trade = storedTrades[tradeIndex];
+                
+                // Skip if the trade is already closed
+                if (trade.status !== 'open') {
+                    return;
+                }
+                
+                const openPrice = parseFloat(trade.price);
+                const amount = parseFloat(trade.amount);
+                
+                // Calculate profit
+                let profit;
+                if (trade.type === 'buy') {
+                    profit = (closingPrice - openPrice) * amount;
+                } else {
+                    profit = (openPrice - closingPrice) * amount;
+                }
+                
+                // Update the trade
+                storedTrades[tradeIndex].status = 'closed';
+                storedTrades[tradeIndex].closed_at = new Date().toISOString();
+                storedTrades[tradeIndex].closing_price = closingPrice;
+                storedTrades[tradeIndex].profit = profit;
+                storedTrades[tradeIndex].close_reason = triggerType;
+                
+                // Save back to localStorage
+                localStorage.setItem('demoTrades', JSON.stringify(storedTrades));
+                
+                // Return original investment plus profit
+                updateUserBalance(openPrice * amount + profit);
+                
+                showNotification(triggerType + ' Triggered', `Position closed automatically with ${profit.toFixed(2)} USD profit!`);
+                
+                // Refresh positions
+                fetchPositions('open');
+            }
+        }
+        
+        // Function to display positions in the table
+        function displayPositions(positions, status) {
+            const tableBody = document.querySelector('.positions-table tbody');
+            if (!tableBody) return;
+            
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            
+            if (positions.length === 0) {
+                // Show empty state
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `<td colspan="9" style="text-align: center; padding: 20px;">No ${status} positions found</td>`;
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+            
+            // Add positions to table
+            positions.forEach(position => {
+                // Calculate profit based on current price vs entry price
+                let currentPrice;
+                if (position.type === 'buy') {
+                    currentPrice = parseFloat(position.price) * 1.2; // 20% higher for buy positions
+                } else {
+                    currentPrice = parseFloat(position.price) * 0.8; // 20% lower for sell positions
+                }
+                
+                let profit;
+                if (position.type === 'buy') {
+                    profit = (currentPrice - parseFloat(position.price)) * parseFloat(position.amount);
+                } else {
+                    profit = (parseFloat(position.price) - currentPrice) * parseFloat(position.amount);
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${position.symbol}</td>
+                    <td>${position.type.toUpperCase()}</td>
+                    <td>${parseFloat(position.amount).toFixed(2)}</td>
+                    <td>${parseFloat(position.price).toFixed(2)}</td>
+                    <td>${currentPrice.toFixed(2)}</td>
+                    <td>${position.stop_loss ? parseFloat(position.stop_loss).toFixed(2) : '-'}</td>
+                    <td>${position.take_profit ? parseFloat(position.take_profit).toFixed(2) : '-'}</td>
+                    <td style="color: ${profit >= 0 ? '#00B15D' : '#FF5B5A'};">${profit.toFixed(2)}</td>
+                    <td>
+                        ${status === 'open' ? 
+                            `<button class="close-position-btn" data-id="${position.id}">Close</button>` : 
+                            status === 'pending' ? 
+                            `<button class="cancel-pending-btn" data-id="${position.id}">Cancel</button>` : 
+                            '-'}
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners for action buttons
+            const closeButtons = document.querySelectorAll('.close-position-btn');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const positionId = this.getAttribute('data-id');
+                    
+                    // Get the trades from localStorage
+                    const storedTrades = JSON.parse(localStorage.getItem('demoTrades') || '[]');
+                    const currentUserId = localStorage.getItem('userLoggedInUser');
+                    
+                    // Find the trade to close
+                    const tradeIndex = storedTrades.findIndex(trade => trade.id === positionId && trade.user_id === currentUserId);
+                    
+                    if (tradeIndex !== -1) {
+                        // Get the row index for accessing current price
+                        const rows = document.querySelectorAll('.positions-table tbody tr');
+                        let rowIndex = -1;
+                        
+                        // Find which row contains this button
+                        for (let i = 0; i < rows.length; i++) {
+                            const closeBtn = rows[i].querySelector('.close-position-btn[data-id="' + positionId + '"]');
+                            if (closeBtn) {
+                                rowIndex = i;
+                                break;
+                            }
+                        }
+                        
+                        const trade = storedTrades[tradeIndex];
+                        let closingPrice, profit;
+                        
+                        // If we found the row, get the price from the UI
+                        if (rowIndex !== -1 && rows[rowIndex].cells[4]) {
+                            closingPrice = parseFloat(rows[rowIndex].cells[4].textContent);
+                        } else {
+                            // Fallback if we can't find the row
+                            closingPrice = trade.type === 'buy' ? 
+                                parseFloat(trade.price) * 1.2 : 
+                                parseFloat(trade.price) * 0.8;
+                        }
+                        
+                        const openPrice = parseFloat(trade.price);
+                        const amount = parseFloat(trade.amount);
+                        
+                        if (trade.type === 'buy') {
+                            profit = (closingPrice - openPrice) * amount;
+                        } else {
+                            profit = (openPrice - closingPrice) * amount;
+                        }
+                        
+                        // Update the trade
+                        storedTrades[tradeIndex].status = 'closed';
+                        storedTrades[tradeIndex].closed_at = new Date().toISOString();
+                        storedTrades[tradeIndex].closing_price = closingPrice;
+                        storedTrades[tradeIndex].profit = profit;
+                        
+                        // Save back to localStorage
+                        localStorage.setItem('demoTrades', JSON.stringify(storedTrades));
+                        
+                        // Return original investment plus profit
+                        updateUserBalance(openPrice * amount + profit);
+                        
+                        showNotification('Position Closed', `Closed position with ${profit.toFixed(2)} USD profit!`);
+                        
+                        // Refresh positions
+                        fetchPositions('open');
+                    }
+                });
+            });
+            
+            const cancelButtons = document.querySelectorAll('.cancel-pending-btn');
+            cancelButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const positionId = this.getAttribute('data-id');
+                    
+                    // Get the trades from localStorage
+                    const storedTrades = JSON.parse(localStorage.getItem('demoTrades') || '[]');
+                    const currentUserId = localStorage.getItem('userLoggedInUser');
+                    
+                    // Find the trade to cancel
+                    const tradeIndex = storedTrades.findIndex(trade => trade.id === positionId && trade.user_id === currentUserId);
+                    
+                    if (tradeIndex !== -1) {
+                        // Mark the trade as cancelled
+                        storedTrades[tradeIndex].status = 'cancelled';
+                        storedTrades[tradeIndex].cancelled_at = new Date().toISOString();
+                        
+                        // Save back to localStorage
+                        localStorage.setItem('demoTrades', JSON.stringify(storedTrades));
+                        
+                        showNotification('Order Cancelled', `Cancelled pending order #${positionId}`);
+                        
+                        // Refresh pending positions
+                        fetchPositions('pending');
+                    }
+                });
+            });
+        }
+
+        // Function to start updating market prices in the sidebar
+        function startMarketPriceUpdates() {
+            console.log('[DEBUG] startMarketPriceUpdates: Function START');
+            
+            // Initial market data with base prices from the HTML
+            const marketData = {
+                'BINANCE:BTCUSDT': { 
+                    symbol: 'BTC', 
+                    bid: 103916.24, 
+                    ask: 103950.70, 
+                    direction: 'up',
+                    lastBid: 103916.24,
+                    lastAsk: 103950.70
+                },
+                'OANDA:XAUUSD': { 
+                    symbol: 'XAU/USD', 
+                    bid: 3225.079, 
+                    ask: 3225.900, 
+                    direction: 'down',
+                    lastBid: 3225.079,
+                    lastAsk: 3225.900
+                },
+                'NASDAQ:AAPL': { 
+                    symbol: 'AAPL', 
+                    bid: 210.43, 
+                    ask: 210.50, 
+                    direction: 'up',
+                    lastBid: 210.43,
+                    lastAsk: 210.50
+                },
+                'OANDA:EURUSD': { 
+                    symbol: 'EUR/USD', 
+                    bid: 1.12105, 
+                    ask: 1.12115, 
+                    direction: 'up',
+                    lastBid: 1.12105,
+                    lastAsk: 1.12115
+                },
+                'OANDA:GBPUSD': { 
+                    symbol: 'GBP/USD', 
+                    bid: 1.33203, 
+                    ask: 1.33213, 
+                    direction: 'up',
+                    lastBid: 1.33203,
+                    lastAsk: 1.33213
+                },
+                'OANDA:USDJPY': { 
+                    symbol: 'USD/JPY', 
+                    bid: 145.284, 
+                    ask: 145.294, 
+                    direction: 'down',
+                    lastBid: 145.284,
+                    lastAsk: 145.294
+                },
+                'NASDAQ:NDX': { 
+                    symbol: 'USTEC', 
+                    bid: 21321.62, 
+                    ask: 21325.00, 
+                    direction: 'neutral',
+                    lastBid: 21321.62,
+                    lastAsk: 21325.00
+                },
+                'TVC:USOIL': { 
+                    symbol: 'USOIL', 
+                    bid: 61.004, 
+                    ask: 61.054, 
+                    direction: 'up',
+                    lastBid: 61.004,
+                    lastAsk: 61.054
+                }
+            };
+            
+            const lastDirections = {};
+            Object.keys(marketData).forEach(key => {
+                lastDirections[key] = marketData[key].direction;
+            });
+
+            // Function to update an instrument's price
+            function updateInstrumentPrice(tvSymbol, data) {
+                const listItem = document.querySelector(`.combined-instrument-list li[data-symbol="${tvSymbol}"]`);
+                if (!listItem) return;
+                
+                const bidBox = listItem.querySelector('.bid-box');
+                const askBox = listItem.querySelector('.ask-box');
+                const directionArrow = listItem.querySelector('.direction-arrow');
+                
+                if (bidBox) {
+                    // Apply flash effect based on price change
+                    if (data.bid > data.lastBid) {
+                        // Price went up - briefly change to green highlight
+                        flashElement(bidBox, '#00C759', '#FF5B5A');
+                    } else if (data.bid < data.lastBid) {
+                        // Price went down - briefly change to darker red highlight
+                        flashElement(bidBox, '#D70040', '#FF5B5A');
+                    }
+                    bidBox.textContent = data.bid.toFixed(getDecimalPlaces(data.bid));
+                }
+                
+                if (askBox) {
+                    // Apply flash effect based on price change
+                    if (data.ask > data.lastAsk) {
+                        // Price went up - briefly change to brighter green
+                        flashElement(askBox, '#00E676', '#00B15D');
+                    } else if (data.ask < data.lastAsk) {
+                        // Price went down - briefly change to darker green
+                        flashElement(askBox, '#008142', '#00B15D');
+                    }
+                    askBox.textContent = data.ask.toFixed(getDecimalPlaces(data.ask));
+                }
+                
+                // Update the direction arrow
+                if (directionArrow && data.direction !== lastDirections[tvSymbol]) {
+                    directionArrow.classList.remove('up', 'down', 'neutral');
+                    directionArrow.classList.add(data.direction);
+                    
+                    if (data.direction === 'up') {
+                        directionArrow.textContent = '↑';
+                        directionArrow.style.backgroundColor = '#00B15D'; // Green
+                    } else if (data.direction === 'down') {
+                        directionArrow.textContent = '↓';
+                        directionArrow.style.backgroundColor = '#FF5B5A'; // Red
+                    } else {
+                        directionArrow.textContent = '-';
+                        directionArrow.style.backgroundColor = '#4a5568'; // Grey
+                    }
+                    
+                    lastDirections[tvSymbol] = data.direction;
+                }
+            }
+            
+            // Helper function to get appropriate decimal places based on price
+            function getDecimalPlaces(price) {
+                if (price < 0.1) return 5;
+                if (price < 10) return 5;
+                if (price < 100) return 3;
+                if (price < 1000) return 2;
+                return 2;
+            }
+            
+            // Function to flash element with color
+            function flashElement(element, flashColor, originalColor) {
+                // Save original background
+                const originalBackground = element.style.backgroundColor || originalColor;
+                
+                // Flash with new color
+                element.style.backgroundColor = flashColor;
+                element.style.transition = 'background-color 0s';
+                
+                // Return to original color with transition
+                setTimeout(() => {
+                    element.style.transition = 'background-color 0.7s ease-out';
+                    element.style.backgroundColor = originalBackground;
+                }, 100);
+            }
+            
+            // Generate random price changes
+            function generatePriceChange() {
+                Object.keys(marketData).forEach(symbol => {
+                    const data = marketData[symbol];
+                    
+                    // Save last prices for comparison
+                    data.lastBid = data.bid;
+                    data.lastAsk = data.ask;
+                    
+                    // Generate random scale factor based on price
+                    let factor = 0.0001; // Default
+                    
+                    // Adjust factor based on price range
+                    if (data.bid > 10000) {
+                        factor = 10; // BTC (large factor for large numbers)
+                    } else if (data.bid > 1000) {
+                        factor = 0.1; // XAUUSD (gold)
+                    } else if (data.bid > 100) {
+                        factor = 0.05; // AAPL, indices
+                    } else if (data.bid > 10) {
+                        factor = 0.005; // USOIL
+                    } else if (data.bid > 1) {
+                        factor = 0.0005; // FX pairs like EUR/USD
+                    }
+                    
+                    // Random fluctuations
+                    const bidChange = (Math.random() - 0.5) * factor;
+                    const askChange = (Math.random() - 0.5) * factor;
+                    
+                    // Apply small random factor to ensure bid < ask
+                    // Ensure spread stays positive and somewhat consistent
+                    data.bid += bidChange;
+                    data.ask = Math.max(data.bid + Math.abs(factor) * 0.3, data.ask + askChange);
+                    
+                    // Set direction based on bid change
+                    if (bidChange > 0) {
+                        data.direction = 'up';
+                    } else if (bidChange < 0) {
+                        data.direction = 'down';
+                    } else {
+                        data.direction = 'neutral';
+                    }
+                    
+                    updateInstrumentPrice(symbol, data);
+                });
+            }
+            
+            // Run initial price update and set interval
+            generatePriceChange(); 
+            setInterval(generatePriceChange, 1000); // Update every second
+        }
+
+        // Set up periodic balance checks (every 30 seconds)
+        setInterval(fetchAndDisplayBalance, 30000);
+
+        // Enhanced token persistence
+        function saveTokenToStorage() {
+            const token = localStorage.getItem('userAuthToken');
+            const username = localStorage.getItem('userLoggedInUser');
+            
+            if (token && username) {
+                // Save to sessionStorage for redundancy
+                sessionStorage.setItem('userAuthToken', token);
+                sessionStorage.setItem('userLoggedInUser', username);
+                
+                // Save to localStorage backup key
+                localStorage.setItem('userToken_backup', token);
+                localStorage.setItem('userUsername_backup', username);
+                
+                console.log('User token saved to backup storage');
+                return true;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html> 

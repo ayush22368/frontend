@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Trading Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #131722;
+            color: #D1D4DC;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .header {
+            background: #1C212D;
+            padding: 18px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #23283A;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #F0B90B;
+            letter-spacing: 1px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        #adminInfo {
+            font-size: 15px;
+            color: #8c92a0;
+        }
+        #logoutButton {
+            background: #FF4B4B;
+            color: #fff;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+        #logoutButton:hover {
+            background: #d93636;
+        }
+        .admin-container {
+            max-width: 1100px;
+            margin: 40px auto 0 auto;
+            padding: 0 24px 40px 24px;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+        .admin-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #F0B90B;
+            margin: 0;
+        }
+        .admin-actions #refreshBtn {
+            background: #2962FF;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .admin-actions #refreshBtn:hover {
+            background: #1746b3;
+        }
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 22px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: #1C212D;
+            padding: 28px 22px 22px 22px;
+            border-radius: 10px;
+            border: 1px solid #23283A;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .stat-card h3 {
+            color: #8c92a0;
+            margin: 0 0 10px 0;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .stat-card .value {
+            color: #F0B90B;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .admin-tab {
+            padding: 10px 28px;
+            background: #23283A;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            color: #8c92a0;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .admin-tab.active {
+            background: #1C212D;
+            color: #F0B90B;
+            border-bottom: 2px solid #F0B90B;
+        }
+        .admin-content {
+            background: #1C212D;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #23283A;
+            border-top: none;
+            padding: 32px 24px 24px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .tab-content h2 {
+            color: #F0B90B;
+            font-size: 1.2rem;
+            margin-bottom: 18px;
+        }
+        .request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid #23283A;
+        }
+        .request-item:last-child {
+            border-bottom: none;
+        }
+        .request-info h4 {
+            margin: 0 0 5px 0;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .request-info p {
+            margin: 0;
+            color: #8c92a0;
+            font-size: 14px;
+        }
+        .request-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .approve-btn, .reject-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+        .approve-btn {
+            background: #00B15D;
+            color: white;
+        }
+        .approve-btn:hover {
+            background: #008e48;
+        }
+        .reject-btn {
+            background: #FF4B4B;
+            color: white;
+        }
+        .reject-btn:hover {
+            background: #d93636;
+        }
+        .user-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+        }
+        .user-list th, .user-list td {
+            padding: 14px 10px;
+            text-align: left;
+            border-bottom: 1px solid #23283A;
+        }
+        .user-list th {
+            color: #8c92a0;
+            font-weight: 500;
+            font-size: 15px;
+            background: #181c27;
+        }
+        .user-list td {
+            color: #fff;
+            font-size: 15px;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .status-pending {
+            background: #FFA500;
+            color: #000;
+        }
+        .status-active {
+            background: #00B15D;
+            color: #fff;
+        }
+        .status-rejected {
+            background: #FF4B4B;
+            color: #fff;
+        }
+        @media (max-width: 900px) {
+            .admin-container {
+                padding: 0 8px 40px 8px;
+            }
+            .admin-content {
+                padding: 18px 6px 12px 6px;
+            }
+            .admin-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .admin-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Trading Platform</div>
+        <div class="user-info">
+            <span id="adminInfo">Admin Panel</span>
+            <button id="logoutButton">Logout</button>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Admin Dashboard</h1>
+            <div class="admin-actions">
+                <!-- Refresh button removed -->
+            </div>
+        </div>
+
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <div class="value" id="totalUsers">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Deposits</h3>
+                <div class="value" id="pendingDeposits">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Deposits</h3>
+                <div class="value" id="totalDeposits">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Traders</h3>
+                <div class="value" id="activeTraders">0</div>
+            </div>
+        </div>
+
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="deposits">Deposit Requests</button>
+            <button class="admin-tab" data-tab="users">User Management</button>
+            <button class="admin-tab" data-tab="withdrawals">Withdrawal Requests</button>
+        </div>
+
+        <div class="admin-content">
+            <!-- Deposit Requests Tab -->
+            <div id="depositsTab" class="tab-content active">
+                <h2>Pending Deposit Requests</h2>
+                <div id="depositRequests">
+                    <!-- Deposit requests will be loaded here -->
+                </div>
+            </div>
+
+            <!-- User Management Tab -->
+            <div id="usersTab" class="tab-content">
+                <h2>User Management</h2>
+                <table class="user-list">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userList">
+                        <!-- User list will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Withdrawal Requests Tab -->
+            <div id="withdrawalsTab" class="tab-content">
+                <h2>Pending Withdrawal Requests</h2>
+                <div id="withdrawalRequests">
+                    <!-- Withdrawal requests will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('[DEBUG] Admin: Main script block started. adminAuthToken:', localStorage.getItem('adminAuthToken'), 'isAdmin:', localStorage.getItem('isAdmin'));
+
+        // Detect page refreshes and preserve auth state
+        window.addEventListener('beforeunload', function() {
+            // Store current auth state with timestamp
+            if (localStorage.getItem('adminAuthToken')) {
+                sessionStorage.setItem('lastAdminAuthState', JSON.stringify({
+                    token: localStorage.getItem('adminAuthToken'),
+                    username: localStorage.getItem('adminLoggedInUser'),
+                    isAdmin: localStorage.getItem('isAdmin'),
+                    timestamp: Date.now()
+                }));
+            }
+        });
+
+        // Check if user is admin
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for recent auth state in session storage (less than 5 minutes old)
+            const lastAuthState = sessionStorage.getItem('lastAdminAuthState');
+            if (lastAuthState) {
+                try {
+                    const authState = JSON.parse(lastAuthState);
+                    const now = Date.now();
+                    const fiveMinutes = 5 * 60 * 1000;
+                    
+                    // If auth state is recent (less than 5 minutes old)
+                    if (authState.timestamp && (now - authState.timestamp < fiveMinutes)) {
+                        // Restore auth state
+                        if (!localStorage.getItem('adminAuthToken') && authState.token) {
+                            localStorage.setItem('adminAuthToken', authState.token);
+                        }
+                        if (!localStorage.getItem('adminLoggedInUser') && authState.username) {
+                            localStorage.setItem('adminLoggedInUser', authState.username);
+                        }
+                        if (!localStorage.getItem('isAdmin') && authState.isAdmin) {
+                            localStorage.setItem('isAdmin', authState.isAdmin);
+                        }
+                        console.log('[DEBUG] Admin auth state restored from recent session');
+                    }
+                } catch (e) {
+                    console.error('Error restoring admin auth state:', e);
+                }
+            }
+        
+            console.log('[DEBUG] Admin: DOMContentLoaded. Checking auth. adminAuthToken:', localStorage.getItem('adminAuthToken'), 'isAdmin:', localStorage.getItem('isAdmin'));
+            const adminToken = localStorage.getItem('adminAuthToken');
+            const isAdminFlag = localStorage.getItem('isAdmin') === 'true';
+            const adminUsername = localStorage.getItem('adminLoggedInUser');
+
+            console.log('[DEBUG] Admin: adminAuthToken from localStorage (initial check):', adminToken);
+            console.log('[DEBUG] Admin: isAdminFlag from localStorage (initial check):', isAdminFlag);
+
+            if (!adminToken) {
+                console.log('[DEBUG] Admin: NO adminAuthToken found in localStorage! Redirecting to login.');
+                window.location.href = 'login.html';
+                return;
+            } else {
+                console.log('[DEBUG] Admin: adminAuthToken IS PRESENT. Proceeding with admin panel setup.');
+                if (adminUsername) {
+                    const adminInfoEl = document.getElementById('adminInfo');
+                    if (adminInfoEl) adminInfoEl.textContent = `Admin: ${adminUsername}`;
+                } else {
+                    const adminInfoEl = document.getElementById('adminInfo');
+                    if (adminInfoEl) adminInfoEl.textContent = `Admin: (name not found but token exists)`;
+                }
+                if (!isAdminFlag) {
+                    console.warn('[DEBUG] Admin: adminAuthToken exists, but isAdminFlag is false. Functionality might be limited or redirecting anyway if other checks fail.');
+                }
+
+                // Load initial data
+                loadDepositRequests();
+                loadUsers();
+                loadWithdrawalRequests();
+                updateStats();
+
+                // Tab switching
+                document.querySelectorAll('.admin-tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        // Remove active class from all tabs
+                        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                        
+                        // Add active class to clicked tab
+                        this.classList.add('active');
+                        const tabId = this.dataset.tab + 'Tab';
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+
+                // Logout
+                document.getElementById('logoutButton').addEventListener('click', function() {
+                    localStorage.removeItem('adminAuthToken');
+                    localStorage.removeItem('adminLoggedInUser');
+                    localStorage.removeItem('isAdmin');
+                    // Also clear session storage
+                    sessionStorage.removeItem('lastAdminAuthState');
+                    // Do NOT remove userAuthToken or userLoggedInUser here
+                    window.location.href = 'login.html';
+                });
+            }
+        });
+
+        // Token refresh function to prevent session expiration
+        async function refreshToken() {
+            const token = localStorage.getItem('adminAuthToken');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('adminAuthToken', data.token);
+                    console.log('Admin token refreshed successfully');
+                    return true;
+                } else {
+                    console.warn('Admin token refresh failed, may need to login again soon');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error refreshing admin token:', error);
+                return false;
+            }
+        }
+        
+        // Load deposit requests
+        async function loadDepositRequests() {
+            console.log('[DEBUG] Admin: loadDepositRequests called.');
+            
+            // Ensure admin is authenticated before proceeding
+            if (!await preAuthCheck()) return;
+            
+            const token = localStorage.getItem('adminAuthToken');
+            console.log('[DEBUG] Admin: loadDepositRequests - adminAuthToken from localStorage:', token);
+            if (!token) {
+                document.getElementById('depositRequests').innerHTML = '<div style="color:#8c92a0; text-align:center; padding:30px 0;">Not authenticated as admin. (No token found)</div>';
+                console.log('[DEBUG] Admin: loadDepositRequests - No token, exiting.');
+                return;
+            }
+            try {
+                console.log('[DEBUG] Admin: loadDepositRequests - Fetching /api/admin/deposits with token:', token);
+                const response = await fetch('http://localhost:3001/api/admin/deposits', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                console.log('[DEBUG] Admin: loadDepositRequests - Response status from /api/admin/deposits:', response.status);
+                if (!response.ok) {
+                    let errorData = null;
+                    try { errorData = await response.json(); } catch (e) { /* ignore if no json body */ }
+                    console.error('[DEBUG] Admin: loadDepositRequests - Response not OK. Status:', response.status, 'Data:', errorData);
+                    document.getElementById('depositRequests').innerHTML = '<div style="color:#FF4B4B; text-align:center; padding:30px 0;">Failed to load deposit requests. Status: ' + response.status + '</div>';
+                    // If 401 or 403, perhaps redirect? For now, just logs.
+                    if (response.status === 401 || response.status === 403) {
+                        console.error('[DEBUG] Admin: loadDepositRequests - AUTHENTICATION FAILED (401/403). Token might be invalid.');
+                        // Consider redirecting here if this is the policy: window.location.href = 'login.html';
+                    }
+                    return;
+                }
+                const deposits = await response.json();
+                const container = document.getElementById('depositRequests');
+                if (deposits.length === 0) {
+                    container.innerHTML = '<div style="color:#8c92a0; text-align:center; padding:30px 0;">No pending deposit requests.</div>';
+                    return;
+                }
+                container.innerHTML = deposits.map(deposit => `
+                    <div class="request-item">
+                        <div class="request-info">
+                            <h4>${deposit.username} (${deposit.email}) - ${deposit.amount} ${deposit.currency}</h4>
+                            <p>Requested: ${new Date(deposit.created_at).toLocaleString()}</p>
+                        </div>
+                        <div class="request-actions">
+                            <button class="approve-btn" onclick="approveDeposit(${deposit.id})">Approve</button>
+                            <button class="reject-btn" onclick="rejectDeposit(${deposit.id})">Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('depositRequests').innerHTML = '<div style="color:#FF4B4B; text-align:center; padding:30px 0;">Error loading deposit requests.</div>';
+            }
+        }
+
+        // Load users
+        function loadUsers() {
+            // This will be replaced with actual API call
+            const mockUsers = [];
+
+            const container = document.getElementById('userList');
+            if (mockUsers.length === 0) {
+                container.innerHTML = '<tr><td colspan="5" style="color:#8c92a0; text-align:center; padding:30px 0;">No users found.</td></tr>';
+                return;
+            }
+            container.innerHTML = mockUsers.map(user => `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.balance} USD</td>
+                    <td><span class="status-badge status-${user.status}">${user.status}</span></td>
+                    <td>
+                        <button class="approve-btn" onclick="toggleUserStatus('${user.username}')">
+                            ${user.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Load withdrawal requests
+        function loadWithdrawalRequests() {
+            // This will be replaced with actual API call
+            const mockWithdrawals = [];
+
+            const container = document.getElementById('withdrawalRequests');
+            if (mockWithdrawals.length === 0) {
+                container.innerHTML = '<div style="color:#8c92a0; text-align:center; padding:30px 0;">No pending withdrawal requests.</div>';
+                return;
+            }
+            container.innerHTML = mockWithdrawals.map(withdrawal => `
+                <div class="request-item">
+                    <div class="request-info">
+                        <h4>${withdrawal.username} - ${withdrawal.amount} ${withdrawal.method}</h4>
+                        <p>Requested: ${withdrawal.timestamp}</p>
+                    </div>
+                    <div class="request-actions">
+                        <button class="approve-btn" onclick="approveWithdrawal(${withdrawal.id})">Approve</button>
+                        <button class="reject-btn" onclick="rejectWithdrawal(${withdrawal.id})">Reject</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update statistics
+        function updateStats() {
+            // This will be replaced with actual API call
+            document.getElementById('totalUsers').textContent = '0';
+            document.getElementById('pendingDeposits').textContent = '0';
+            document.getElementById('totalDeposits').textContent = '0';
+            document.getElementById('activeTraders').textContent = '0';
+        }
+
+        // Function to ensure authentication before critical operations
+        async function preAuthCheck() {
+            // If there's no token in localStorage, try to get it from sessionStorage
+            if (!localStorage.getItem('adminAuthToken')) {
+                const lastAuthState = sessionStorage.getItem('lastAdminAuthState');
+                if (lastAuthState) {
+                    try {
+                        const authState = JSON.parse(lastAuthState);
+                        // If auth state exists and is recent (less than 5 minutes old)
+                        const now = Date.now();
+                        const fiveMinutes = 5 * 60 * 1000;
+                        if (authState.timestamp && (now - authState.timestamp < fiveMinutes)) {
+                            // Restore auth state to localStorage
+                            localStorage.setItem('adminAuthToken', authState.token);
+                            localStorage.setItem('adminLoggedInUser', authState.username);
+                            localStorage.setItem('isAdmin', authState.isAdmin);
+                            console.log('[DEBUG] Admin auth state restored from sessionStorage before operation');
+                            return true;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing admin auth state from sessionStorage:', e);
+                    }
+                }
+                // If we get here, could not restore auth from sessionStorage
+                console.warn('No valid admin auth token found, redirecting to login');
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // Action handlers
+        async function approveDeposit(id) {
+            // Ensure admin is authenticated before proceeding
+            if (!await preAuthCheck()) return;
+            
+            const token = localStorage.getItem('adminAuthToken');
+            if (!token) {
+                alert('Not authenticated as admin');
+                return;
+            }
+            try {
+                const response = await fetch(`http://localhost:3001/api/admin/deposits/${id}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.message || 'Failed to approve deposit');
+                    return;
+                }
+                // Success: refresh deposit requests WITHOUT reloading the page
+                loadDepositRequests();
+                updateStats();
+                // Show a success message
+                const successMsg = document.createElement('div');
+                successMsg.className = 'success-message';
+                successMsg.style.backgroundColor = '#00B15D';
+                successMsg.style.color = 'white';
+                successMsg.style.padding = '10px';
+                successMsg.style.borderRadius = '4px';
+                successMsg.style.margin = '10px 0';
+                successMsg.style.textAlign = 'center';
+                successMsg.textContent = 'Deposit approved successfully!';
+                
+                // Add the message to the top of deposit requests container
+                const container = document.getElementById('depositRequests');
+                if (container) {
+                    container.insertBefore(successMsg, container.firstChild);
+                    // Remove the message after 3 seconds
+                    setTimeout(() => {
+                        if (successMsg.parentNode) {
+                            successMsg.parentNode.removeChild(successMsg);
+                        }
+                    }, 3000);
+                }
+            } catch (err) {
+                alert('Error approving deposit');
+            }
+        }
+
+        function rejectDeposit(id) {
+            // This will be replaced with actual API call
+            alert(`Deposit ${id} rejected`);
+            loadDepositRequests();
+        }
+
+        function approveWithdrawal(id) {
+            // This will be replaced with actual API call
+            alert(`Withdrawal ${id} approved`);
+            loadWithdrawalRequests();
+            updateStats();
+        }
+
+        function rejectWithdrawal(id) {
+            // This will be replaced with actual API call
+            alert(`Withdrawal ${id} rejected`);
+            loadWithdrawalRequests();
+        }
+
+        function toggleUserStatus(username) {
+            // This will be replaced with actual API call
+            alert(`User ${username} status toggled`);
+            loadUsers();
+            updateStats();
+        }
+
+        // Enhanced token persistence
+        function saveTokenToStorage() {
+            const token = localStorage.getItem('adminAuthToken');
+            const username = localStorage.getItem('adminLoggedInUser');
+            const isAdmin = localStorage.getItem('isAdmin');
+            
+            if (token && username) {
+                // Save to sessionStorage for redundancy
+                sessionStorage.setItem('adminAuthToken', token);
+                sessionStorage.setItem('adminLoggedInUser', username);
+                sessionStorage.setItem('isAdmin', isAdmin || 'true');
+                
+                // Save to localStorage backup key
+                localStorage.setItem('adminToken_backup', token);
+                localStorage.setItem('adminUser_backup', username);
+                
+                console.log('Admin token saved to backup storage');
+                return true;
+            }
+            return false;
+        }
+        
+        // Check if token exists in main storage, if not try to recover from backup
+        function verifyAndRestoreToken() {
+            const mainToken = localStorage.getItem('adminAuthToken');
+            
+            if (!mainToken) {
+                // Try to restore from sessionStorage
+                const sessionToken = sessionStorage.getItem('adminAuthToken');
+                const sessionUser = sessionStorage.getItem('adminLoggedInUser');
+                const sessionIsAdmin = sessionStorage.getItem('isAdmin');
+                
+                if (sessionToken && sessionUser) {
+                    localStorage.setItem('adminAuthToken', sessionToken);
+                    localStorage.setItem('adminLoggedInUser', sessionUser);
+                    localStorage.setItem('isAdmin', sessionIsAdmin || 'true');
+                    console.log('Admin token restored from sessionStorage');
+                    return true;
+                }
+                
+                // Try to restore from backup in localStorage
+                const backupToken = localStorage.getItem('adminToken_backup');
+                const backupUser = localStorage.getItem('adminUser_backup');
+                
+                if (backupToken && backupUser) {
+                    localStorage.setItem('adminAuthToken', backupToken);
+                    localStorage.setItem('adminLoggedInUser', backupUser);
+                    localStorage.setItem('isAdmin', 'true');
+                    console.log('Admin token restored from backup');
+                    return true;
+                }
+                
+                // If we still don't have a token, redirect to login
+                console.warn('No valid admin token found, redirecting to login');
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // Save the token initially
+        saveTokenToStorage();
+        
+        // Check for token every 10 seconds
+        setInterval(function() {
+            if (!verifyAndRestoreToken()) {
+                console.error('Token verification failed');
+            }
+            saveTokenToStorage();
+        }, 10000);
+        
+        // Intercept page refreshes and save token state
+        window.addEventListener('beforeunload', function() {
+            saveTokenToStorage();
+        });
+        
+        // Periodic auth state update to keep it fresh in sessionStorage
+        setInterval(function() {
+            if (localStorage.getItem('adminAuthToken')) {
+                sessionStorage.setItem('lastAdminAuthState', JSON.stringify({
+                    token: localStorage.getItem('adminAuthToken'),
+                    username: localStorage.getItem('adminLoggedInUser'),
+                    isAdmin: localStorage.getItem('isAdmin'),
+                    timestamp: Date.now()
+                }));
+                console.log('[DEBUG] Admin auth state updated in sessionStorage');
+            }
+        }, 60000); // Update every minute
+        
+        // Check and refresh token periodically (every 30 minutes)
+        setInterval(refreshToken, 30 * 60 * 1000);
+        
+        // Also refresh token on page load
+        refreshToken();
+    </script>
+</body>
+</html> 

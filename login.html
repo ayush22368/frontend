@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Mock Trading Platform</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1e293b; /* Dark blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #cbd5e1; /* Light gray text */
+        }
+        .login-container {
+            background-color: #334155; /* Slightly lighter card background */
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 350px;
+            text-align: center;
+        }
+        .login-container h1 {
+            color: #f5b014; /* Yellow-orange for heading */
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .login-container p {
+            color: #94a3b8; /* Lighter text for subtitle */
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .login-container label {
+            display: block;
+            text-align: left;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+        .login-container input[type="email"],
+        .login-container input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border: 1px solid #4b5563; /* Darker border */
+            background-color: #1e293b; /* Input background */
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        .login-container input[type="email"]:focus,
+        .login-container input[type="password"]:focus {
+            outline: none;
+            border-color: #f5b014;
+            box-shadow: 0 0 0 2px rgba(245, 176, 20, 0.3);
+        }
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background-color: #f5b014; /* Yellow-orange button */
+            color: #1e293b; /* Dark text on button */
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .login-container button:hover {
+            background-color: #e4a00f; /* Slightly darker on hover */
+        }
+        .login-container .register-link {
+            margin-top: 25px;
+            font-size: 14px;
+        }
+        .login-container .register-link a {
+            color: #f5b014;
+            text-decoration: none;
+        }
+        .login-container .register-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Welcome Back!</h1>
+        <p>Login to access your trading dashboard.</p>
+        <form id="loginForm">
+            <div>
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email">
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <button type="submit">LOGIN</button>
+        </form>
+        <div id="message-container" style="margin-top: 15px; color: #f5b014;"></div>
+        <div class="register-link">
+            Don't have an account? <a href="register.html">Register here</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.textContent = ''; // Clear previous messages
+
+            if (!email || !password) {
+                messageContainer.textContent = "Please fill in email and password.";
+                messageContainer.style.color = "#f87171"; // Red for error
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageContainer.textContent = data.message;
+                    messageContainer.style.color = "#34d399"; // Green for success
+                    
+                    document.getElementById('loginForm').reset();
+                    
+                    // Clear potentially conflicting old non-namespaced tokens first
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('loggedInUser');
+                    // The main 'isAdmin' will be set fresh, but let's clear any old one
+                    localStorage.removeItem('isAdmin');
+
+
+                    if (data.user && data.user.isAdmin) {
+                        // Admin user is logging in
+                        console.log('Login: Admin login detected.');
+                        // Clear previous admin-specific tokens
+                        localStorage.removeItem('adminAuthToken');
+                        localStorage.removeItem('adminLoggedInUser');
+                        // Ensure no user session artifacts conflict with this admin session
+                        localStorage.removeItem('userAuthToken'); 
+                        localStorage.removeItem('userLoggedInUser');
+
+                        localStorage.setItem('adminAuthToken', data.token);
+                        localStorage.setItem('adminLoggedInUser', data.user.username);
+                        localStorage.setItem('isAdmin', 'true'); // Explicitly for this session
+                        console.log('Login: Admin tokens set. isAdmin=true. Redirecting to admin.html');
+                        window.location.href = 'admin.html';
+                    } else if (data.user) {
+                        // Regular user is logging in
+                        console.log('Login: Regular user login detected.');
+                        // Clear previous user-specific tokens
+                        localStorage.removeItem('userAuthToken');
+                        localStorage.removeItem('userLoggedInUser');
+                        // Ensure no admin session artifacts conflict with this user session
+                        localStorage.removeItem('adminAuthToken');
+                        localStorage.removeItem('adminLoggedInUser');
+
+                        localStorage.setItem('userAuthToken', data.token);
+                        localStorage.setItem('userLoggedInUser', data.user.username);
+                        localStorage.setItem('isAdmin', 'false'); // Explicitly for this session
+                        console.log('Login: User tokens set. isAdmin=false. Redirecting to dashboard.html');
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        // Fallback if data.user is not as expected
+                        console.error('Login: User data not found or invalid in response from /api/auth/login');
+                        messageContainer.textContent = "Error: User data not found in response.";
+                        messageContainer.style.color = "#f87171";
+                    }
+
+                } else {
+                    messageContainer.textContent = "Error: " + (data.message || response.statusText);
+                    messageContainer.style.color = "#f87171"; // Red for error
+                }
+
+            } catch (error) {
+                console.error('Login fetch error:', error);
+                messageContainer.textContent = "An error occurred. Please try again later.";
+                messageContainer.style.color = "#f87171"; // Red for error
+            }
+        });
+    </script>
+</body>
+</html> 

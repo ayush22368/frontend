@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Mock Trading Platform</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1e293b; /* Dark blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #cbd5e1; /* Light gray text */
+        }
+        .register-container {
+            background-color: #334155; /* Slightly lighter card background */
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 380px; /* Slightly wider for more fields */
+            text-align: center;
+        }
+        .register-container h1 {
+            color: #f5b014; /* Yellow-orange for heading */
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .register-container p {
+            color: #94a3b8; /* Lighter text for subtitle */
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .register-container label {
+            display: block;
+            text-align: left;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+        .register-container input[type="text"],
+        .register-container input[type="email"],
+        .register-container input[type="password"] {
+            width: calc(100% - 22px); /* Account for padding and border */
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border: 1px solid #4b5563; /* Darker border */
+            background-color: #1e293b; /* Input background */
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        .register-container input[type="text"]:focus,
+        .register-container input[type="email"]:focus,
+        .register-container input[type="password"]:focus {
+            outline: none;
+            border-color: #f5b014;
+            box-shadow: 0 0 0 2px rgba(245, 176, 20, 0.3);
+        }
+        .register-container button {
+            width: 100%;
+            padding: 12px;
+            background-color: #f5b014; /* Yellow-orange button */
+            color: #1e293b; /* Dark text on button */
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .register-container button:hover {
+            background-color: #e4a00f; /* Slightly darker on hover */
+        }
+        .register-container .login-link {
+            margin-top: 25px;
+            font-size: 14px;
+        }
+        .register-container .login-link a {
+            color: #f5b014;
+            text-decoration: none;
+        }
+        .register-container .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1>Create Account</h1>
+        <p>Join our platform and start your trading journey.</p>
+        <form id="registerForm">
+            <div>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username">
+            </div>
+            <div>
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email">
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <div>
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirm-password">
+            </div>
+            <button type="submit">REGISTER</button>
+        </form>
+        <div id="message-container" style="margin-top: 15px; color: #f5b014;"></div>
+        <div class="login-link">
+            Already have an account? <a href="login.html">Login here</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.textContent = ''; // Clear previous messages
+
+            // Client-side validation
+            if (!username || !email || !password || !confirmPassword) {
+                messageContainer.textContent = "Please fill in all fields.";
+                messageContainer.style.color = "#f87171"; // Red for error
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                messageContainer.textContent = "Passwords do not match!";
+                messageContainer.style.color = "#f87171"; // Red for error
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) { // Status codes 200-299
+                    messageContainer.textContent = data.message + " Redirecting to login...";
+                    messageContainer.style.color = "#34d399"; // Green for success
+                    // Clear form
+                    document.getElementById('registerForm').reset(); 
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000); // Redirect after 2 seconds
+                } else {
+                    messageContainer.textContent = "Error: " + (data.message || response.statusText);
+                    messageContainer.style.color = "#f87171"; // Red for error
+                }
+
+            } catch (error) {
+                console.error('Registration fetch error:', error);
+                messageContainer.textContent = "An error occurred. Please try again later.";
+                messageContainer.style.color = "#f87171"; // Red for error
+            }
+        });
+    </script>
+</body>
+</html>
